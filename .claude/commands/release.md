@@ -7,7 +7,7 @@ Follow these steps:
 - If a version argument was provided and it doesn't match, update all three build.gradle.kts files to the specified version.
 
 ## Step 2: Publish to Maven Central
-- Run `./gradlew publishAllPublicationsToMavenCentralRepository`
+- Run `./gradlew clean publishAllPublicationsToMavenCentralRepository`
 - Verify the build succeeds.
 
 ## Step 3: Create GitHub Release
