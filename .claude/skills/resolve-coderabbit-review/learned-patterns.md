@@ -20,6 +20,8 @@
 | 단일 색상 매핑을 역할별로 분리 (container/onContainer/onSurface) | 1 | #37 | 2026-04-09 |
 | JSONObject 파싱 크래시 방어 (runCatching 래핑) | 1 | #42 | 2026-04-10 |
 | LocalContext 직접 캐스팅 대신 ContextWrapper 언래핑으로 ComponentActivity 탐색 | 1 | #54 | 2026-05-13 |
+| KDoc 내 인라인 FQN → import 추가 후 simple name으로 교체 | 1 | #60 | 2026-05-14 |
+| Boolean 파라미터를 Boolean?으로 변경하여 null=global default, true/false=per-call override 지원 | 1 | #60 | 2026-05-14 |
 
 ## 거절 패턴 (반복적으로 거절한 코멘트 유형)
 
