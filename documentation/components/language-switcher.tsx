@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { i18n, languageNames } from '@/lib/i18n';
 import { Globe } from 'lucide-react';
 
@@ -57,7 +58,7 @@ export function LanguageSwitcher() {
       {isOpen && (
         <div className="absolute left-0 bottom-full mb-1 bg-fd-popover border rounded-md shadow-lg min-w-[120px] z-50">
           {i18n.languages.map((lang) => (
-            <a
+            <Link
               key={lang}
               href={getLocalePath(lang)}
               className={`block px-3 py-2 text-sm hover:bg-fd-accent transition-colors ${
@@ -66,7 +67,7 @@ export function LanguageSwitcher() {
               onClick={() => setIsOpen(false)}
             >
               {languageNames[lang] || lang}
-            </a>
+            </Link>
           ))}
         </div>
       )}
