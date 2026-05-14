@@ -1,0 +1,98 @@
+---
+title: DariInterceptor API
+description: Interface and default implementation for capturing bridge messages
+---
+
+## Interface
+
+```kotlin
+interface DariInterceptor {
+    val tag: String? get() = null
+
+    fun onWebToAppRequest(
+        handlerName: String,
+        requestId: String?,
+        requestData: String?,
+        fireAndForget: Boolean? = null,
+    )
+
+    fun onWebToAppResponse(
+        handlerName: String,
+        requestId: String?,
+        responseData: String?,
+        isSuccess: Boolean,
+    )
+
+    fun onAppToWebMessage(
+        handlerName: String,
+        requestId: String?,
+        data: String?,
+        fireAndForget: Boolean? = null,
+    )
+
+    fun onAppToWebResponse(
+        requestId: String?,
+        isSuccess: Boolean,
+        responseData: String?,
+    )
+}
+```
+
+## DefaultDariInterceptor
+
+The built-in implementation. Stores messages in Dari's Room database and posts notifications.
+
+```kotlin
+val interceptor = DefaultDariInterceptor(tag = "PaymentBridge")
+```
+
+The optional `tag` labels messages by bridge source when multiple interceptors are active in the same app.
+
+## Methods
+
+### `onWebToAppRequest`
+
+Called when JavaScript sends a message to the native side.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `handlerName` | `String` | Bridge handler name |
+| `requestId` | `String?` | Unique ID for pairing with a response. `null` = standalone |
+| `requestData` | `String?` | Request payload |
+| `fireAndForget` | `Boolean?` | `null` = use global config, `true` = resolve immediately, `false` = wait for response |
+
+### `onWebToAppResponse`
+
+Called when the native side sends a response back to JavaScript.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `handlerName` | `String` | Must match the request |
+| `requestId` | `String?` | Must match the request's `requestId` |
+| `responseData` | `String?` | Response payload |
+| `isSuccess` | `Boolean` | `true` → `SUCCESS`, `false` → `ERROR` |
+
+### `onAppToWebMessage`
+
+Called when the native side pushes a message to JavaScript.
+
+### `onAppToWebResponse`
+
+Called when JavaScript responds to a native-initiated message.
+
+## Fire-and-Forget
+
+One-way calls that never receive a response can be marked so they immediately resolve to `SUCCESS`:
+
+```kotlin
+// Per-call
+interceptor.onWebToAppRequest(
+    handlerName = "logEvent",
+    requestId = null,
+    requestData = """{"event": "button_click"}""",
+    fireAndForget = true,
+)
+
+// Global — all calls
+DariConfig(fireAndForget = true)
+```

@@ -1,0 +1,31 @@
+---
+title: 소개
+description: Dari — Android WebView 브릿지 통신 인스펙터
+---
+
+## Dari란?
+
+Dari는 [Chucker](https://github.com/ChuckerTeam/chucker)에서 영감을 받아 개발된 Android WebView 브릿지 통신 디버그 인스펙터 라이브러리입니다. 기존 브릿지 로직을 수정하지 않고도 WebView↔앱 간 모든 브릿지 메시지를 실시간으로 캡처하고 확인할 수 있습니다.
+
+## 주요 기능
+
+- **실시간 캡처**: Web→App, App→Web 브릿지 메시지 모두 지원
+- **3단계 상태 추적**: `IN_PROGRESS`, `SUCCESS`, `ERROR`
+- **다크 모드** 지원
+- **흔들기로 열기**: 디바이스를 흔들어 인스펙터 실행
+- **상태 필터**: 오류 또는 진행 중인 호출만 필터링
+- **JSON 내보내기**: 캡처된 메시지를 JSON으로 내보내기
+- **No-op 모듈** (`dari-noop`): 릴리즈 빌드에서 완전히 제거
+- **단방향(Fire-and-Forget) 지원**: 응답이 없는 브릿지 호출 처리
+
+## 동작 방식
+
+`DariInterceptor`를 기존 브릿지 콜백에 연결하면, 각 호출이 요청/응답 데이터, 타임스탬프, 상태를 포함한 `MessageEntry`로 저장됩니다. 인스펙터 UI에서 모든 항목을 실시간으로 확인할 수 있습니다.
+
+## 모듈 구성
+
+| 모듈 | 역할 |
+|------|------|
+| `dari-core` | 데이터 모델 및 인터페이스 |
+| `dari` | UI, Room DB, 알림을 포함한 전체 구현 |
+| `dari-noop` | 릴리즈 빌드용 No-op 스텁 |

@@ -65,3 +65,9 @@ secrets.properties
 /app/google-services.json
 
 .kotlin/
+
+# Documentation (Next.js)
+documentation/node_modules/
+documentation/.next/
+documentation/out/
+documentation/.source/

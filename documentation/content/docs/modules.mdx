@@ -1,0 +1,36 @@
+---
+title: Module Structure
+description: Dari's three-module architecture for zero production overhead
+---
+
+Dari is split into three modules to keep release builds free of debug code.
+
+## `dari-core`
+
+Pure Kotlin/Android module with no UI, no Room database, and no notifications.
+
+Contains:
+- `DariConfig` — configuration data class
+- `DariInterceptor` — interface for capturing bridge messages
+- `MessageEntry` — data model for a bridge call lifecycle
+- `MessageStatus` — enum: `IN_PROGRESS`, `SUCCESS`, `ERROR`
+- `MessageDirection` — enum: `WEB_TO_APP`, `APP_TO_WEB`
+
+## `dari`
+
+Full debug implementation. Depends on `dari-core`.
+
+Contains:
+- `DefaultDariInterceptor` — stores messages in Room, posts notifications
+- `Dari` — singleton entry point (`initialize`, `repository`, `config`)
+- Inspector UI (Jetpack Compose)
+- Room database + DAO
+- Shake-to-open sensor
+
+Add to `debugImplementation` only.
+
+## `dari-noop`
+
+No-op stub that depends on `dari-core`. All public APIs are empty — `Dari.initialize()` does nothing, `DefaultDariInterceptor` methods record nothing.
+
+Add to `releaseImplementation` to ensure zero runtime overhead in production builds.

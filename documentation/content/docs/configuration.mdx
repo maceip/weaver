@@ -1,0 +1,60 @@
+---
+title: Configuration
+description: DariConfig options reference
+---
+
+Pass a `DariConfig` instance to `Dari.initialize()` to customize behavior.
+
+```kotlin
+Dari.initialize(
+    context = this,
+    config = DariConfig(
+        maxEntries = 500,
+        showNotification = true,
+        maxContentLength = 500_000,
+        shakeToOpen = false,
+        retentionPeriod = 1.days,
+        fireAndForget = false,
+    )
+)
+```
+
+## Options
+
+### `maxEntries`
+**Type**: `Int` | **Default**: `500`
+
+Maximum number of messages to keep in memory. Oldest entries are evicted when the limit is exceeded.
+
+### `showNotification`
+**Type**: `Boolean` | **Default**: `true`
+
+Shows a persistent status notification. Tap it to open the inspector.
+
+### `maxContentLength`
+**Type**: `Int` | **Default**: `500_000`
+
+Maximum character length for request/response body data. Longer bodies are truncated.
+
+### `shakeToOpen`
+**Type**: `Boolean` | **Default**: `false`
+
+Opens the Dari inspector screen when the device is shaken.
+
+### `retentionPeriod`
+**Type**: `Duration?` | **Default**: `null`
+
+TTL-based cleanup — messages older than this duration are deleted automatically.
+
+```kotlin
+DariConfig(retentionPeriod = 6.hours)
+```
+
+`null` disables TTL cleanup.
+
+### `fireAndForget`
+**Type**: `Boolean` | **Default**: `false`
+
+When `true`, all bridge calls are resolved to `SUCCESS` immediately without waiting for a response. Useful when your entire bridge is one-way.
+
+For per-call control, pass `fireAndForget` directly to the interceptor methods.
