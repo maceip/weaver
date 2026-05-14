@@ -10,13 +10,13 @@ interface DariInterceptor {
         get() = null
 
     /** Called when a Web -> App request is received */
-    fun onWebToAppRequest(handlerName: String, requestId: String?, requestData: String?)
+    fun onWebToAppRequest(handlerName: String, requestId: String?, requestData: String?, fireAndForget: Boolean = false)
 
     /** Called when a response is sent for a Web -> App request */
     fun onWebToAppResponse(handlerName: String, requestId: String?, responseData: String?, isSuccess: Boolean)
 
     /** Called when an App -> Web message is sent */
-    fun onAppToWebMessage(handlerName: String, requestId: String?, data: String?)
+    fun onAppToWebMessage(handlerName: String, requestId: String?, data: String?, fireAndForget: Boolean = false)
 
     /** Called when a web response is received for an App -> Web request */
     fun onAppToWebResponse(requestId: String?, isSuccess: Boolean, responseData: String?)
