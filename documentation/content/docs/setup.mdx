@@ -1,0 +1,65 @@
+---
+title: Setup
+description: Add Dari to your Android project
+---
+
+## Installation
+
+Add the dependencies to your app module's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    debugImplementation("io.github.easyhooon:dari:1.4.5")
+    releaseImplementation("io.github.easyhooon:dari-noop:1.4.5")
+}
+```
+
+The `dari-noop` module provides empty implementations of all public APIs so your code compiles in release with zero runtime overhead.
+
+## Initialize
+
+Call `Dari.initialize()` in your `Application` class:
+
+```kotlin
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        Dari.initialize(this)
+    }
+}
+```
+
+You can pass a `DariConfig` to customize behavior:
+
+```kotlin
+Dari.initialize(
+    context = this,
+    config = DariConfig(
+        showNotification = true,
+        shakeToOpen = true,
+    )
+)
+```
+
+## Connect Your Bridge
+
+Instantiate a `DefaultDariInterceptor` and call its methods at each bridge point:
+
+```kotlin
+val interceptor = DefaultDariInterceptor(tag = "MyBridge")
+
+// Web → App: request received
+interceptor.onWebToAppRequest(
+    handlerName = "getUserInfo",
+    requestId = "req_001",
+    requestData = """{"userId": 123}""",
+)
+
+// Web → App: response sent back
+interceptor.onWebToAppResponse(
+    handlerName = "getUserInfo",
+    requestId = "req_001",
+    responseData = """{"name": "John"}""",
+    isSuccess = true,
+)
+```

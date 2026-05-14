@@ -1,0 +1,65 @@
+---
+title: 설치 및 설정
+description: Android 프로젝트에 Dari 추가하기
+---
+
+## 의존성 추가
+
+앱 모듈의 `build.gradle.kts`에 의존성을 추가합니다:
+
+```kotlin
+dependencies {
+    debugImplementation("io.github.easyhooon:dari:1.4.5")
+    releaseImplementation("io.github.easyhooon:dari-noop:1.4.5")
+}
+```
+
+`dari-noop` 모듈은 모든 공개 API의 빈 구현을 제공하여 릴리즈 빌드에서도 코드가 컴파일되며, 런타임 오버헤드가 전혀 없습니다.
+
+## 초기화
+
+`Application` 클래스에서 `Dari.initialize()`를 호출합니다:
+
+```kotlin
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        Dari.initialize(this)
+    }
+}
+```
+
+`DariConfig`를 전달하여 동작을 커스터마이징할 수 있습니다:
+
+```kotlin
+Dari.initialize(
+    context = this,
+    config = DariConfig(
+        showNotification = true,
+        shakeToOpen = true,
+    )
+)
+```
+
+## 브릿지 연결
+
+`DefaultDariInterceptor`를 생성하고 각 브릿지 지점에서 메서드를 호출합니다:
+
+```kotlin
+val interceptor = DefaultDariInterceptor(tag = "MyBridge")
+
+// Web → App: 요청 수신
+interceptor.onWebToAppRequest(
+    handlerName = "getUserInfo",
+    requestId = "req_001",
+    requestData = """{"userId": 123}""",
+)
+
+// Web → App: 응답 전송
+interceptor.onWebToAppResponse(
+    handlerName = "getUserInfo",
+    requestId = "req_001",
+    responseData = """{"name": "John"}""",
+    isSuccess = true,
+)
+```

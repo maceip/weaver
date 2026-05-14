@@ -1,0 +1,98 @@
+---
+title: DariInterceptor API
+description: 브릿지 메시지 캡처를 위한 인터페이스 및 기본 구현체
+---
+
+## 인터페이스
+
+```kotlin
+interface DariInterceptor {
+    val tag: String? get() = null
+
+    fun onWebToAppRequest(
+        handlerName: String,
+        requestId: String?,
+        requestData: String?,
+        fireAndForget: Boolean? = null,
+    )
+
+    fun onWebToAppResponse(
+        handlerName: String,
+        requestId: String?,
+        responseData: String?,
+        isSuccess: Boolean,
+    )
+
+    fun onAppToWebMessage(
+        handlerName: String,
+        requestId: String?,
+        data: String?,
+        fireAndForget: Boolean? = null,
+    )
+
+    fun onAppToWebResponse(
+        requestId: String?,
+        isSuccess: Boolean,
+        responseData: String?,
+    )
+}
+```
+
+## DefaultDariInterceptor
+
+기본 구현체입니다. 메시지를 Dari의 Room 데이터베이스에 저장하고 알림을 표시합니다.
+
+```kotlin
+val interceptor = DefaultDariInterceptor(tag = "PaymentBridge")
+```
+
+선택적 `tag`를 사용하면 앱에 여러 인터셉터가 활성화된 경우 브릿지 소스별로 메시지를 구분할 수 있습니다.
+
+## 메서드
+
+### `onWebToAppRequest`
+
+JavaScript가 네이티브 앱으로 메시지를 보낼 때 호출합니다.
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `handlerName` | `String` | 브릿지 핸들러 이름 |
+| `requestId` | `String?` | 요청-응답 쌍을 식별하는 고유 ID. `null` = 단독 메시지 |
+| `requestData` | `String?` | 요청 페이로드 |
+| `fireAndForget` | `Boolean?` | `null` = 전역 설정 사용, `true` = 즉시 완료, `false` = 응답 대기 |
+
+### `onWebToAppResponse`
+
+네이티브 앱이 JavaScript로 응답을 보낼 때 호출합니다.
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `handlerName` | `String` | 요청과 일치해야 함 |
+| `requestId` | `String?` | 요청의 `requestId`와 일치해야 함 |
+| `responseData` | `String?` | 응답 페이로드 |
+| `isSuccess` | `Boolean` | `true` → `SUCCESS`, `false` → `ERROR` |
+
+### `onAppToWebMessage`
+
+네이티브 앱이 JavaScript로 메시지를 푸시할 때 호출합니다.
+
+### `onAppToWebResponse`
+
+JavaScript가 네이티브 앱의 요청에 응답할 때 호출합니다.
+
+## Fire-and-Forget (단방향 호출)
+
+응답을 받지 않는 단방향 호출은 즉시 `SUCCESS`로 처리되도록 설정할 수 있습니다:
+
+```kotlin
+// 개별 호출
+interceptor.onWebToAppRequest(
+    handlerName = "logEvent",
+    requestId = null,
+    requestData = """{"event": "button_click"}""",
+    fireAndForget = true,
+)
+
+// 전역 설정 — 모든 호출에 적용
+DariConfig(fireAndForget = true)
+```
