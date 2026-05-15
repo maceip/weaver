@@ -53,7 +53,7 @@ class DefaultDariInterceptor(
         }
     }
 
-    override fun onAppToWebMessage(handlerName: String, requestId: String?, data: String?) {
+    override fun onAppToWebRequest(handlerName: String, requestId: String?, data: String?) {
         val (truncatedData, wasTruncated) = MessageEntry.truncateIfNeeded(data, maxContentLength)
         val entry = MessageEntry(
             requestId = requestId,

@@ -15,8 +15,8 @@ interface DariInterceptor {
     /** Called when a response is sent for a Web -> App request */
     fun onWebToAppResponse(handlerName: String, requestId: String?, responseData: String?, isSuccess: Boolean)
 
-    /** Called when an App -> Web message is sent */
-    fun onAppToWebMessage(handlerName: String, requestId: String?, data: String?)
+    /** Called when an App -> Web request is sent */
+    fun onAppToWebRequest(handlerName: String, requestId: String?, data: String?)
 
     /** Called when a web response is received for an App -> Web request */
     fun onAppToWebResponse(requestId: String?, isSuccess: Boolean, responseData: String?)
