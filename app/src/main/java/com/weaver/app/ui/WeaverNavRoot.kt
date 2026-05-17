@@ -1,14 +1,9 @@
 package com.weaver.app.ui
 
-import androidx.activity.BackEventCompat
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.PredictiveBackHandler
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,6 +11,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,9 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import com.weaver.app.assets.BitmapCache
 import com.weaver.app.bridge.AttachmentKind
 import com.weaver.app.bridge.Bridge
@@ -36,17 +42,9 @@ import com.weaver.app.bridge.Inbound
 import com.weaver.app.bridge.Preset
 import com.weaver.app.bridge.StitchNode
 import com.weaver.app.fold.FoldObserver
-import kotlinx.coroutines.CancellationException
+import com.weaver.app.fold.FoldState
 
-/**
- * Top-level navigation states. The bridge owns the Stitch selection; this state
- * captures whether the user has explicitly "entered" the focused view (tile tap)
- * so we can drive a back-stack with predictive-back animations. Will be replaced
- * by Nav3 + adaptive scenes in a follow-up.
- */
-enum class ViewMode { Overview, Focused }
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun WeaverNavRoot(
     bridge: Bridge,
@@ -59,39 +57,35 @@ fun WeaverNavRoot(
     val foldState = foldObserver?.state?.collectAsState()?.value
     var promptState by remember { mutableStateOf(PromptInputState()) }
     var activeTool by remember { mutableStateOf(CanvasTool.Cursor) }
-    var viewMode by remember { mutableStateOf(ViewMode.Overview) }
 
-    val primary = selection.firstOrNull()
-    val focused = nodes.firstOrNull { it.id == primary }
+    val backStack = rememberNavBackStack(Overview)
 
-    val isWide = (foldState?.widthPx ?: 0) >= 1600
-    val pagesPerView = if (isWide) 2 else 1
-
-    // If selection clears from outside (e.g. Stitch fires selection_changed:[]), drop
-    // out of focused mode too so the back stack stays coherent.
-    LaunchedEffect(focused) {
-        if (focused == null && viewMode == ViewMode.Focused) viewMode = ViewMode.Overview
+    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+    val directive = remember(windowAdaptiveInfo) {
+        calculatePaneScaffoldDirective(windowAdaptiveInfo)
+            .copy(horizontalPartitionSpacerSize = 0.dp, verticalPartitionSpacerSize = 0.dp)
     }
+    val supportingPaneStrategy = rememberSupportingPaneSceneStrategy<NavKey>(
+        backNavigationBehavior = BackNavigationBehavior.PopUntilCurrentDestinationChange,
+        directive = directive,
+    )
 
-    val backProgress = remember { Animatable(0f) }
-    var swipeFromRight by remember { mutableStateOf(false) }
-
-    PredictiveBackHandler(enabled = viewMode == ViewMode.Focused) { progress ->
-        try {
-            progress.collect { event ->
-                swipeFromRight = event.swipeEdge == BackEventCompat.EDGE_RIGHT
-                backProgress.snapTo(event.progress)
+    // Bridge selection drives the back stack: when Stitch reports a multi-select,
+    // open the MultiSelect destination if we're sitting on Overview.
+    LaunchedEffect(selection) {
+        val top = backStack.lastOrNull()
+        when {
+            selection.size > 1 && top !is MultiSelect -> {
+                if (top !is Focused) backStack.add(MultiSelect)
             }
-            backProgress.animateTo(1f, animationSpec = tween(150))
-            viewMode = ViewMode.Overview
-            backProgress.snapTo(0f)
-        } catch (_: CancellationException) {
-            backProgress.animateTo(0f, animationSpec = tween(180))
+            selection.isEmpty() && top is MultiSelect -> {
+                backStack.removeLastOrNull()
+            }
+            selection.size == 1 && top is Focused && (top as Focused).nodeId != selection.first() -> {
+                backStack.removeLastOrNull()
+                backStack.add(Focused(selection.first()))
+            }
         }
-    }
-
-    BackHandler(enabled = viewMode == ViewMode.Overview && selection.size > 1) {
-        bridge.send(Inbound.ClearSelection)
     }
 
     BackHandler(enabled = promptState.activeSlash != null) {
@@ -102,49 +96,65 @@ fun WeaverNavRoot(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        when {
-                            viewMode == ViewMode.Focused && focused != null -> focused.id
-                            selection.size > 1 -> "${selection.size} selected"
-                            else -> "Weaver"
-                        },
-                    )
+                    val title = when (val top = backStack.lastOrNull()) {
+                        is Focused -> top.nodeId
+                        MultiSelect -> "${selection.size} selected"
+                        else -> "Weaver"
+                    }
+                    Text(title)
                 },
             )
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Overview is always present underneath so predictive back reveals it.
-            OverviewCanvas(
-                nodes = nodes,
-                selectedId = primary,
-                onSelect = { id -> bridge.send(Inbound.SelectNode(id)) },
-                onFocus = { id ->
-                    bridge.send(Inbound.SelectNode(id))
-                    viewMode = ViewMode.Focused
+            NavDisplay(
+                backStack = backStack,
+                onBack = {
+                    // Mirror back into the bridge so Stitch doesn't keep a stale focus.
+                    val top = backStack.lastOrNull()
+                    backStack.removeLastOrNull()
+                    if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
                 },
-                bitmapCache = bitmapCache,
-                pagesPerView = pagesPerView,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            if (viewMode == ViewMode.Focused && focused != null) {
-                FocusedLayer(
-                    progress = backProgress.value,
-                    swipeFromRight = swipeFromRight,
-                ) {
-                    if (isWide) {
-                        SplitFocusedView(
+                sceneStrategies = listOf(supportingPaneStrategy),
+                entryProvider = entryProvider {
+                    entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                        OverviewPane(
                             nodes = nodes,
-                            focusedId = focused.id,
+                            primary = selection.firstOrNull(),
+                            bridge = bridge,
+                            bitmapCache = bitmapCache,
+                            onFocus = dropUnlessResumed { id ->
+                                bridge.send(Inbound.SelectNode(id))
+                                backStack.add(Focused(id))
+                            },
+                        )
+                    }
+                    entry<Focused>(metadata = SupportingPaneSceneStrategy.supportingPane()) { route ->
+                        val node = nodes.firstOrNull { it.id == route.nodeId }
+                        if (node != null) {
+                            FocusedPane(
+                                node = node,
+                                neighbour = nodes.getOrNull(nodes.indexOf(node) + 1)
+                                    ?: nodes.getOrNull(nodes.indexOf(node) - 1),
+                                isWide = foldIsWide(foldState),
+                                bridge = bridge,
+                                bitmapCache = bitmapCache,
+                                selection = selection,
+                            )
+                        }
+                    }
+                    entry<MultiSelect>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                        MultiSelectPane(
+                            nodes = nodes.filter { it.id in selection },
+                            selection = selection,
+                            bridge = bridge,
                             bitmapCache = bitmapCache,
                         )
-                    } else {
-                        FocusedDesignView(node = focused, bitmapCache = bitmapCache)
                     }
-                }
-            }
+                },
+            )
 
+            // Tool palette is a chrome element — sits over whichever scene is active.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -159,84 +169,110 @@ fun WeaverNavRoot(
                 )
             }
 
-            if (selection.isNotEmpty() && viewMode == ViewMode.Focused) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 12.dp),
-                ) {
-                    CanvasToolbar(
-                        selectedIds = selection,
-                        onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
-                    )
-                }
-            }
-
-            if (focused != null && !isWide && viewMode == ViewMode.Focused) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 64.dp, bottom = 96.dp),
-                ) {
-                    SizeBadge(widthPx = focused.w.toInt(), heightPx = focused.h.toInt())
-                }
-            }
-
             PromptDock(
                 bridge = bridge,
                 presets = presets,
                 state = promptState,
                 onStateChange = { promptState = it },
-                scopeId = focused?.id?.takeIf { viewMode == ViewMode.Focused },
-                contentPadding = padding,
+                scopeId = (backStack.lastOrNull() as? Focused)?.nodeId,
             )
         }
     }
 }
 
-@Composable
-private fun FocusedLayer(
-    progress: Float,
-    swipeFromRight: Boolean,
-    content: @Composable () -> Unit,
-) {
-    val inv = 1f - progress
-    val scale = 0.85f + 0.15f * inv
-    val alpha = inv.coerceIn(0f, 1f)
-    val slidePx = if (swipeFromRight) -200f * progress else 200f * progress
+private fun foldIsWide(state: FoldState?): Boolean =
+    (state?.widthPx ?: 0) >= 1600
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                this.alpha = alpha
-                translationX = slidePx
-            },
-    ) {
-        content()
+@Composable
+private fun OverviewPane(
+    nodes: List<StitchNode>,
+    primary: String?,
+    bridge: Bridge,
+    bitmapCache: BitmapCache?,
+    onFocus: (String) -> Unit,
+) {
+    OverviewCanvas(
+        nodes = nodes,
+        selectedId = primary,
+        onSelect = { id -> bridge.send(Inbound.SelectNode(id)) },
+        onFocus = onFocus,
+        bitmapCache = bitmapCache,
+        pagesPerView = 1,
+    )
+}
+
+@Composable
+private fun FocusedPane(
+    node: StitchNode,
+    neighbour: StitchNode?,
+    isWide: Boolean,
+    bridge: Bridge,
+    bitmapCache: BitmapCache?,
+    selection: List<String>,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isWide && neighbour != null) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                    FocusedDesignView(node = node, bitmapCache = bitmapCache)
+                }
+                Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                    FocusedDesignView(node = neighbour, bitmapCache = bitmapCache)
+                }
+            }
+        } else {
+            FocusedDesignView(node = node, bitmapCache = bitmapCache)
+        }
+
+        if (selection.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp),
+            ) {
+                CanvasToolbar(
+                    selectedIds = selection,
+                    onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
+                )
+            }
+        }
+
+        if (!isWide) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 64.dp, bottom = 96.dp),
+            ) {
+                SizeBadge(widthPx = node.w.toInt(), heightPx = node.h.toInt())
+            }
+        }
     }
 }
 
 @Composable
-private fun SplitFocusedView(
+private fun MultiSelectPane(
     nodes: List<StitchNode>,
-    focusedId: String,
+    selection: List<String>,
+    bridge: Bridge,
     bitmapCache: BitmapCache?,
 ) {
-    val focusedIndex = nodes.indexOfFirst { it.id == focusedId }
-    if (focusedIndex < 0) return
-    val left = nodes[focusedIndex]
-    val right = nodes.getOrNull(focusedIndex + 1) ?: nodes.getOrNull(focusedIndex - 1)
-    Row(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-            FocusedDesignView(node = left, bitmapCache = bitmapCache)
-        }
-        if (right != null) {
-            Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-                FocusedDesignView(node = right, bitmapCache = bitmapCache)
-            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        OverviewCanvas(
+            nodes = nodes,
+            selectedId = nodes.firstOrNull()?.id,
+            onSelect = { id -> bridge.send(Inbound.SelectNode(id)) },
+            onFocus = { /* no-op while multi-select toolbar is up */ },
+            bitmapCache = bitmapCache,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp),
+        ) {
+            CanvasToolbar(
+                selectedIds = selection,
+                onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
+            )
         }
     }
 }
@@ -248,7 +284,6 @@ private fun PromptDock(
     state: PromptInputState,
     onStateChange: (PromptInputState) -> Unit,
     scopeId: String?,
-    @Suppress("UNUSED_PARAMETER") contentPadding: PaddingValues,
 ) {
     Column(
         modifier = Modifier
