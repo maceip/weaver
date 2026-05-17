@@ -1,5 +1,6 @@
 package com.weaver.app.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +60,11 @@ fun FocusedDesignView(
 
     var scale by remember { mutableFloatStateOf(MIN_SCALE) }
     var translation by remember { mutableStateOf(Offset.Zero) }
+
+    BackHandler(enabled = scale > MIN_SCALE) {
+        scale = MIN_SCALE
+        translation = Offset.Zero
+    }
 
     Box(
         modifier = modifier

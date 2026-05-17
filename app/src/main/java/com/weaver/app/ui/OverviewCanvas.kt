@@ -3,6 +3,7 @@ package com.weaver.app.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -58,6 +60,7 @@ fun OverviewCanvas(
     nodes: List<StitchNode>,
     selectedId: String?,
     onSelect: (String) -> Unit,
+    onFocus: (String) -> Unit = {},
     bitmapCache: BitmapCache? = null,
     pagesPerView: Int = 1,
     modifier: Modifier = Modifier,
@@ -101,7 +104,12 @@ fun OverviewCanvas(
             pageSize = pageSize,
             contentPadding = PaddingValues(horizontal = if (pagesPerView <= 1) 32.dp else 16.dp),
         ) { page ->
-            DesignTile(node = nodes[page], bitmapCache = bitmapCache)
+            val node = nodes[page]
+            DesignTile(
+                node = node,
+                bitmapCache = bitmapCache,
+                onTap = { onFocus(node.id) },
+            )
         }
         Spacer(Modifier.height(8.dp))
         Scrubber(
@@ -120,7 +128,7 @@ private class FractionalPageSize(private val pages: Int) : PageSize {
 }
 
 @Composable
-private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?) {
+private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?, onTap: () -> Unit = {}) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.revision, node.thumb) {
         val thumb = node.thumb
         value = if (thumb == null || bitmapCache == null) {
@@ -142,7 +150,8 @@ private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?) {
                 .aspectRatio(9f / 19.5f)
                 .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
+                .pointerInput(node.id) { detectTapGestures(onTap = { onTap() }) },
         ) {
             val current = bitmap
             if (current != null) {

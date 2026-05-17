@@ -126,6 +126,10 @@ sealed interface Inbound {
     data class SelectNode(val id: String) : Inbound
 
     @Serializable
+    @SerialName("clear_selection")
+    data object ClearSelection : Inbound
+
+    @Serializable
     @SerialName("synthesize_input")
     data class SynthesizeInput(val event: JsonElement) : Inbound
 
