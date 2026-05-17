@@ -19,8 +19,8 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "dari"
-include(":sample")
+rootProject.name = "weaver"
+include(":app")
 include(":dari-core")
 include(":dari")
 include(":dari-noop")
