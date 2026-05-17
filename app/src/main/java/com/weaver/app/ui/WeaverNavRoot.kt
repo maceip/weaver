@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,25 +21,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.weaver.app.assets.BitmapCache
 import com.weaver.app.bridge.AttachmentKind
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.CanvasTool
 import com.weaver.app.bridge.Inbound
 import com.weaver.app.bridge.Preset
+import com.weaver.app.bridge.StitchNode
+import com.weaver.app.fold.FoldObserver
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeaverNavRoot(
     bridge: Bridge,
     presets: List<Preset>,
+    bitmapCache: BitmapCache? = null,
+    foldObserver: FoldObserver? = null,
 ) {
     val nodes by bridge.nodes.collectAsState()
     val selection by bridge.selection.collectAsState()
+    val foldState = foldObserver?.state?.collectAsState()?.value
     var promptState by remember { mutableStateOf(PromptInputState()) }
     var activeTool by remember { mutableStateOf(CanvasTool.Cursor) }
 
     val primary = selection.firstOrNull()
     val focused = nodes.firstOrNull { it.id == primary }
+
+    // Inner display of the fold is wide enough to show two designs side-by-side.
+    val isWide = (foldState?.widthPx ?: 0) >= 1600
+    val pagesPerView = if (isWide) 2 else 1
 
     Scaffold(
         topBar = {
@@ -61,13 +72,21 @@ fun WeaverNavRoot(
                     nodes = nodes,
                     selectedId = primary,
                     onSelect = { id -> bridge.send(Inbound.SelectNode(id)) },
+                    bitmapCache = bitmapCache,
+                    pagesPerView = pagesPerView,
                 )
             } else if (focused != null) {
-                FocusedDesignView(node = focused)
+                if (isWide) {
+                    SplitFocusedView(
+                        nodes = nodes,
+                        focusedId = focused.id,
+                        bitmapCache = bitmapCache,
+                    )
+                } else {
+                    FocusedDesignView(node = focused, bitmapCache = bitmapCache)
+                }
             }
 
-            // Vertical tool palette on the left edge; small enough to live alongside
-            // the canvas content on the Pixel 10 Pro Fold's inner display.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -82,7 +101,6 @@ fun WeaverNavRoot(
                 )
             }
 
-            // Canvas toolbar floats over the top of the design when something is selected.
             if (selection.isNotEmpty()) {
                 Box(
                     modifier = Modifier
@@ -91,15 +109,12 @@ fun WeaverNavRoot(
                 ) {
                     CanvasToolbar(
                         selectedIds = selection,
-                        onAction = { action, ids ->
-                            bridge.send(Inbound.Canvas(action, ids))
-                        },
+                        onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
                     )
                 }
             }
 
-            // Size badge anchored to the bottom-left of the focused design.
-            if (focused != null) {
+            if (focused != null && !isWide) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -117,6 +132,32 @@ fun WeaverNavRoot(
                 scopeId = focused?.id,
                 contentPadding = padding,
             )
+        }
+    }
+}
+
+/**
+ * Inner-display two-up view: the focused design on the left, its right-hand
+ * neighbour on the right. Either tile pinch-zooms independently.
+ */
+@Composable
+private fun SplitFocusedView(
+    nodes: List<StitchNode>,
+    focusedId: String,
+    bitmapCache: BitmapCache?,
+) {
+    val focusedIndex = nodes.indexOfFirst { it.id == focusedId }
+    if (focusedIndex < 0) return
+    val left = nodes[focusedIndex]
+    val right = nodes.getOrNull(focusedIndex + 1) ?: nodes.getOrNull(focusedIndex - 1)
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+            FocusedDesignView(node = left, bitmapCache = bitmapCache)
+        }
+        if (right != null) {
+            Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                FocusedDesignView(node = right, bitmapCache = bitmapCache)
+            }
         }
     }
 }

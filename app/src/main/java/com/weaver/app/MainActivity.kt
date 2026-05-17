@@ -67,7 +67,12 @@ class MainActivity : ComponentActivity() {
             WeaverTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
                     AndroidView(factory = { hiddenHost })
-                    WeaverNavRoot(bridge = bridge, presets = builtinPresets)
+                    WeaverNavRoot(
+                        bridge = bridge,
+                        presets = builtinPresets,
+                        bitmapCache = app.bitmapCache,
+                        foldObserver = foldObserver,
+                    )
                 }
             }
         }
