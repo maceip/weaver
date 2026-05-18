@@ -5,6 +5,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
+import java.io.ByteArrayInputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -185,17 +188,20 @@ class WebViewHost(
 
                 override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
                     // HAR-equivalent surface: every request flows through here.
-                    // We never modify the response, just log the method+URL so the
-                    // Dari notification + logcat give us a network timeline without
-                    // needing to attach a desktop devtools. Stitch traffic is
-                    // distinguishable by host filter.
+                    // Log Stitch traffic to logcat as WeaverNet, then rewrite the
+                    // top-level Stitch HTML response to neutralise the sandbox
+                    // attribute on the iframe wrapper so we can reach the editor's
+                    // DOM. See rewriteStitchOuter() for the why.
                     val url = req.url.toString()
                     val host = req.url.host ?: ""
-                    if (host.endsWith("stitch.withgoogle.com") ||
+                    val isStitchHost = host.endsWith("stitch.withgoogle.com") ||
                         host.endsWith("appspot.com") ||
                         host.endsWith("googleusercontent.com")
-                    ) {
+                    if (isStitchHost) {
                         Log.d("WeaverNet", "${req.method} ${SystemClock.elapsedRealtime()}ms $url")
+                    }
+                    if (req.method == "GET" && host == "stitch.withgoogle.com" && req.isForMainFrame) {
+                        return rewriteStitchOuter(url, req)
                     }
                     return null
                 }
@@ -247,5 +253,64 @@ class WebViewHost(
         }
         bridge.detach()
         webView = null
+    }
+
+    /**
+     * Stitch's outer page hosts the editor in `<iframe sandbox="allow-scripts"
+     * srcdoc="...">`. That sandbox + null-origin srcdoc combination makes the
+     * iframe unreachable from the parent frame — neither evaluateJavascript
+     * nor addDocumentStartJavaScript can inject into it. Without intervention
+     * the content script never sees the React Flow canvas.
+     *
+     * Trick: fetch the outer HTML ourselves and rewrite the sandbox attribute
+     * to add `allow-same-origin`. That gives the iframe the parent's origin
+     * (stitch.withgoogle.com), so our document-start script — whose allowed
+     * origin list covers that host — is allowed to run inside it.
+     *
+     * Risk: Stitch can break this by hashing the outer HTML or moving the
+     * iframe to a non-srcdoc form. The rewrite is conservative — only patches
+     * the sandbox attribute, preserves everything else. If the regex misses
+     * we return null and the WebView fetches normally; we'd see
+     * selector_breakage and know to revisit.
+     */
+    private fun rewriteStitchOuter(url: String, req: WebResourceRequest): WebResourceResponse? {
+        return runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            for ((k, v) in req.requestHeaders) conn.setRequestProperty(k, v)
+            conn.instanceFollowRedirects = false
+            conn.useCaches = false
+            val status = conn.responseCode
+            if (status !in 200..299) {
+                conn.disconnect()
+                return null
+            }
+            val contentType = conn.contentType ?: "text/html"
+            if (!contentType.contains("html", ignoreCase = true)) {
+                conn.disconnect()
+                return null
+            }
+            val raw = conn.inputStream.use { it.readBytes() }
+            conn.disconnect()
+            val html = String(raw, Charsets.UTF_8)
+            val patched = html.replace(
+                """sandbox="allow-scripts"""",
+                """sandbox="allow-scripts allow-same-origin"""",
+            ).replace(
+                """sandbox='allow-scripts'""",
+                """sandbox='allow-scripts allow-same-origin'""",
+            )
+            if (patched == html) {
+                Log.d(TAG, "outer html had no sandbox attribute to patch ($url)")
+            } else {
+                Log.d(TAG, "patched iframe sandbox in outer html ($url)")
+            }
+            WebResourceResponse(
+                "text/html",
+                "UTF-8",
+                ByteArrayInputStream(patched.toByteArray(Charsets.UTF_8)),
+            )
+        }.onFailure {
+            Log.w(TAG, "rewriteStitchOuter failed for $url: ${it.message}")
+        }.getOrNull()
     }
 }
