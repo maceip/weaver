@@ -15,7 +15,26 @@ package com.weaver.app.webview
  *     -> Full project state, including the design-token map
  *        ([[name, hex], ...]) for the active project's theme.
  *
- * Format details from the network-trace.har fixture under
+ * Other batchexecute rpcids observed in the HAR fixtures, decoded but not
+ * yet teed (none are critical paths today; revisit if Stitch removes
+ * StreamCreateSession or we need fine-grained features):
+ *
+ *   cabgj   -> Mint a new project. Empty `f.req` argument, returns the
+ *              fresh `projects/<numericId>` path. Fires when the user
+ *              submits a seed prompt from the landing-page composer.
+ *   XaOLp   -> Register pre-uploaded /contrib_service/ttl_30d/<id> files
+ *              as initial screens on a new project. Returns CDN URLs +
+ *              `projects/<pid>/screens/<sid>` + dimensions per image.
+ *   eW2RYb  -> Fetch node layout (position + size per screen).
+ *   dNS8Mc  -> Fetch prompt history + carries the full session path,
+ *              same `projects/.../sessions/<sid>` as StreamCreateSession.
+ *   UiiVCf  -> Probe a sub-resource ("design_system" arg). Empty if not
+ *              present yet.
+ *   ErneX   -> List project files (CDN URLs again).
+ *   N5xENe  -> Unknown — small response of layout numbers.
+ *   yxssG   -> Telemetry / event recorder. Empty response.
+ *
+ * Format details from the network-trace*.har fixtures under
  * app/src/test/resources/stitch-fixtures/.
  */
 internal object StitchFetchInterceptor {

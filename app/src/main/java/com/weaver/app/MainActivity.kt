@@ -43,6 +43,12 @@ class MainActivity : ComponentActivity() {
 
         bridge = Bridge(interceptor)
         webViewHost = WebViewHost(applicationContext, bridge)
+        webViewHost.onStitchProjectIdResolved = { stitchId ->
+            // Bind the freshly-minted Stitch project id to whichever local draft
+            // is on top. The repository ignores the call if no draft is current.
+            val draft = app.projectRepository.projects.value.firstOrNull { it.isDraft }
+            if (draft != null) app.projectRepository.bindStitchId(draft.id, stitchId)
+        }
         foldObserver = FoldObserver(this, bridge)
         val picker = AccountPicker(this, ServerClientIds.WEB_OAUTH, app.accountResolver)
         authController = AuthController(picker, app.accountResolver, webViewHost)

@@ -42,6 +42,15 @@ class WebViewHost(
     var webView: WebView? = null
         private set
 
+    /**
+     * Fires whenever the WebView lands on a Stitch project URL, with the
+     * numeric project id parsed out. Used by NavRoot to call
+     * ProjectRepository.bindStitchId so a brand-new project that just got
+     * its id from Stitch can be promoted from "draft" to a real persisted
+     * project.
+     */
+    var onStitchProjectIdResolved: ((stitchProjectId: String) -> Unit)? = null
+
     @SuppressLint("SetJavaScriptEnabled")
     fun create(): WebView {
         // Remote DevTools: with this enabled, chrome://inspect on a desktop
@@ -112,6 +121,9 @@ class WebViewHost(
                         // have grabbed window.fetch by the time this runs.
                         view.evaluateJavascript(StitchFetchInterceptor.source, null)
                     }
+                    if (url != null) extractStitchProjectId(url)?.let {
+                        onStitchProjectIdResolved?.invoke(it)
+                    }
                 }
 
                 override fun onPageFinished(view: WebView, url: String?) {
@@ -160,6 +172,18 @@ class WebViewHost(
 
     fun load(url: String = STITCH_URL) {
         webView?.loadUrl(url)
+    }
+
+    /**
+     * Stitch project URLs look like
+     *   https://stitch.withgoogle.com/projects/<20-digit-numeric>
+     *   https://app-companion-430619.appspot.com/projects/<20-digit-numeric>[?...]
+     * The iframe srcdoc URL also embeds the same id. Returns null when [url]
+     * is anything else (landing page, /assets, internal pings).
+     */
+    internal fun extractStitchProjectId(url: String): String? {
+        val regex = Regex("""/projects/(\d{8,})""")
+        return regex.find(url)?.groupValues?.get(1)
     }
 
     fun destroy() {
