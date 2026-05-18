@@ -20,6 +20,18 @@ sealed interface AuthState {
  * Coordinates the Credential Manager sign-in with the headless WebView.
  * The WebView is pre-warmed by MainActivity before this runs; on success
  * we inject cookies and reload so Stitch picks up the authenticated session.
+ *
+ * Caveat (per the project-logged-out.html fixture): an unauthenticated
+ * /projects/{id} request returns a 404 page, not a sign-in redirect.
+ * Stitch's session cookies are minted by Google's OAuth handshake
+ * (`usegapi=1` + `gapi.lb.en.*`), so a raw id_token from Credential
+ * Manager is probably insufficient on its own — we may need to either
+ * (a) briefly surface the WebView for Stitch's own Continue-with-Google
+ * flow (one-time per account, then headless forever) or (b) exchange
+ * the id_token server-side for session cookies. Current code path is
+ * the optimistic "id_token + cookie hint" version; if CookieManager
+ * doesn't carry a Stitch session marker after [signIn], we'll need to
+ * fall back to (a) — track via [CookieInjector.hasStitchCookies].
  */
 class AuthController(
     private val picker: AccountPicker,
