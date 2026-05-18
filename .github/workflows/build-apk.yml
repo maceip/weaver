@@ -19,6 +19,7 @@ concurrency:
 jobs:
   build-debug:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +31,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-36
+            build-tools;36.0.0
+            platform-tools
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -40,21 +46,46 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
           restore-keys: gradle-${{ runner.os }}-
 
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
+
       - name: Build :app debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
+        # -x installGitHooks: the root build wires installGitHooks into preBuild
+        # to install a local pre-commit hook. CI has no use for it and the
+        # task confuses a fresh checkout.
+        # --stacktrace: full Kotlin compiler error context when something fails.
+        # --no-daemon: pointless in CI where the JVM is one-shot anyway.
+        run: ./gradlew :app:assembleDebug -x installGitHooks --no-daemon --stacktrace
 
       - name: Surface APK metadata
+        if: always()
         run: |
-          set -eu
+          set +e
           APK=app/build/outputs/apk/debug/app-debug.apk
-          ls -lh "$APK"
-          echo "sha256=$(sha256sum "$APK" | cut -d' ' -f1)"
-          echo "size=$(stat -c%s "$APK") bytes"
+          if [ -f "$APK" ]; then
+            ls -lh "$APK"
+            echo "sha256=$(sha256sum "$APK" | cut -d' ' -f1)"
+            echo "size=$(stat -c%s "$APK") bytes"
+          else
+            echo "::warning::APK not built (see build step logs above)"
+          fi
 
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: weaver-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: |
+            **/build/reports/
+            **/build/outputs/logs/
+          if-no-files-found: ignore
+          retention-days: 7
