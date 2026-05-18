@@ -90,9 +90,23 @@ sealed interface Outbound {
     ) : Outbound
 
     @Serializable
+    @SerialName("agent_log_updated")
+    data class AgentLogUpdated(val entries: List<AgentLogEntry>) : Outbound
+
+    @Serializable
     @SerialName("error")
     data class Error(val code: String, val message: String) : Outbound
 }
+
+enum class AgentRole { User, Agent, System }
+
+@Serializable
+data class AgentLogEntry(
+    val id: String,
+    val role: AgentRole = AgentRole.Agent,
+    val text: String,
+    val timestamp: Long = 0,
+)
 
 @Serializable
 sealed interface Inbound {

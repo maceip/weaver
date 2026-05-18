@@ -35,6 +35,9 @@ class Bridge(
     private val _generation = MutableStateFlow<Map<String, GenerationState>>(emptyMap())
     val generation: StateFlow<Map<String, GenerationState>> = _generation.asStateFlow()
 
+    private val _agentLog = MutableStateFlow<List<AgentLogEntry>>(emptyList())
+    val agentLog: StateFlow<List<AgentLogEntry>> = _agentLog.asStateFlow()
+
     private val _events = MutableSharedFlow<Outbound>(
         replay = 0,
         extraBufferCapacity = 64,
@@ -63,6 +66,7 @@ class Bridge(
             is Outbound.GenerationProgress -> _generation.update { it + (message.id to message.state) }
             is Outbound.AssetReady -> _events.tryEmit(message)
             is Outbound.ExportComplete -> _events.tryEmit(message)
+            is Outbound.AgentLogUpdated -> _agentLog.value = message.entries
             is Outbound.Error -> {
                 Log.e(TAG, "stitch error ${message.code}: ${message.message}")
                 _events.tryEmit(message)
