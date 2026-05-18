@@ -15,7 +15,11 @@ import android.webkit.WebViewClient
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.weaver.app.bridge.Bridge
+import com.weaver.app.bridge.ExportKind
 import com.weaver.app.bridge.JsBridgeInterface
+import com.weaver.app.bridge.Outbound
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 private const val TAG = "WeaverWebView"
 
@@ -79,6 +83,36 @@ class WebViewHost(
             visibility = View.VISIBLE
 
             addJavascriptInterface(JsBridgeInterface(bridge), "Android")
+
+            // Stitch exports go through a Content-Disposition: attachment GET to
+            // contribution.usercontent.google.com/download?c=<base64-protobuf>.
+            // The protobuf token is generated client-side by Stitch's JS, so we
+            // can't synthesise it ourselves — but we don't need to. When the
+            // user taps Export -> {Zip,Figma,...} the WebView starts a download
+            // and this listener picks it up. Emit ExportComplete with the URL
+            // so the Compose layer can hand it to Android's DownloadManager (or
+            // an InputStream copy) and surface the saved file.
+            setDownloadListener { url, _, contentDisposition, mimeType, contentLength ->
+                val kind = when {
+                    url.contains(".zip") || mimeType == "application/zip" -> ExportKind.Zip
+                    url.contains(".fig") || mimeType.contains("figma") -> ExportKind.Figma
+                    mimeType.startsWith("text/html") -> ExportKind.RawCode
+                    else -> ExportKind.RawCode
+                }
+                val payload = buildJsonObject {
+                    put("url", JsonPrimitive(url))
+                    put("mimeType", JsonPrimitive(mimeType))
+                    put("contentDisposition", JsonPrimitive(contentDisposition ?: ""))
+                    put("contentLength", JsonPrimitive(contentLength))
+                }
+                Log.d(TAG, "download intercepted: kind=$kind size=$contentLength url=${url.take(120)}")
+                bridge.handleOutbound(
+                    bridge.json.encodeToString(
+                        Outbound.serializer(),
+                        Outbound.ExportComplete(kind = kind, payload = payload),
+                    ),
+                )
+            }
 
             // The fetch interceptor MUST run before any Stitch script that captures
             // a reference to window.fetch. Use the document-start hook when the
