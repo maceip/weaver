@@ -63,6 +63,21 @@ class WebViewHost(
 
             addJavascriptInterface(JsBridgeInterface(bridge), "Android")
 
+            // The fetch interceptor MUST run before any Stitch script that captures
+            // a reference to window.fetch. Use the document-start hook when the
+            // WebView build supports it; otherwise fall back to onPageStarted
+            // injection, which is best-effort.
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                WebViewCompat.addDocumentStartJavaScript(
+                    this,
+                    StitchFetchInterceptor.source,
+                    setOf(
+                        "https://stitch.withgoogle.com",
+                        "https://app-companion-430619.appspot.com",
+                    ),
+                )
+            }
+
             webChromeClient = object : WebChromeClient() {
                 override fun onProgressChanged(view: WebView, newProgress: Int) {
                     if (newProgress == 100) injectContentScript(view)
@@ -72,6 +87,11 @@ class WebViewHost(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                     Log.d(TAG, "load start: $url")
+                    if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                        // Fallback: best-effort early injection. Stitch may already
+                        // have grabbed window.fetch by the time this runs.
+                        view.evaluateJavascript(StitchFetchInterceptor.source, null)
+                    }
                 }
 
                 override fun onPageFinished(view: WebView, url: String?) {

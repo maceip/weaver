@@ -38,6 +38,18 @@ class Bridge(
     private val _agentLog = MutableStateFlow<List<AgentLogEntry>>(emptyList())
     val agentLog: StateFlow<List<AgentLogEntry>> = _agentLog.asStateFlow()
 
+    /**
+     * Active streaming sessions, keyed by sessionId. Tracks per-session sequence
+     * number, latest stages, and finished-bytes when complete. Populated from
+     * the fetch interceptor's tee of /AppCompanionAgentService/StreamCreateSession.
+     */
+    private val _sessions = MutableStateFlow<Map<String, SessionSnapshot>>(emptyMap())
+    val sessions: StateFlow<Map<String, SessionSnapshot>> = _sessions.asStateFlow()
+
+    /** Per-project Material design tokens harvested from batchexecute f6CJY. */
+    private val _projectThemes = MutableStateFlow<Map<String, Map<String, String>>>(emptyMap())
+    val projectThemes: StateFlow<Map<String, Map<String, String>>> = _projectThemes.asStateFlow()
+
     private val _events = MutableSharedFlow<Outbound>(
         replay = 0,
         extraBufferCapacity = 64,
@@ -67,6 +79,32 @@ class Bridge(
             is Outbound.AssetReady -> _events.tryEmit(message)
             is Outbound.ExportComplete -> _events.tryEmit(message)
             is Outbound.AgentLogUpdated -> _agentLog.value = message.entries
+            is Outbound.SessionStarted -> _sessions.update {
+                it + (message.sessionId to SessionSnapshot(
+                    projectId = message.projectId,
+                    sessionId = message.sessionId,
+                ))
+            }
+            is Outbound.SessionProgress -> _sessions.update { current ->
+                val existing = current[message.sessionId] ?: SessionSnapshot(
+                    projectId = "",
+                    sessionId = message.sessionId,
+                )
+                current + (message.sessionId to existing.copy(
+                    seqNo = message.seqNo,
+                    stages = message.stages,
+                ))
+            }
+            is Outbound.SessionFinished -> _sessions.update { current ->
+                val existing = current[message.sessionId] ?: return@update current
+                current + (message.sessionId to existing.copy(
+                    finished = true,
+                    totalBytes = message.totalBytes,
+                ))
+            }
+            is Outbound.ProjectThemeUpdated -> _projectThemes.update {
+                it + (message.projectId to message.tokens)
+            }
             is Outbound.Error -> {
                 Log.e(TAG, "stitch error ${message.code}: ${message.message}")
                 _events.tryEmit(message)

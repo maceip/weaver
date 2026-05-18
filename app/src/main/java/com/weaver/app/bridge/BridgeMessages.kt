@@ -94,9 +94,55 @@ sealed interface Outbound {
     data class AgentLogUpdated(val entries: List<AgentLogEntry>) : Outbound
 
     @Serializable
+    @SerialName("session_started")
+    data class SessionStarted(
+        val projectId: String,
+        val sessionId: String,
+    ) : Outbound
+
+    @Serializable
+    @SerialName("session_progress")
+    data class SessionProgress(
+        val sessionId: String,
+        val seqNo: Int,
+        val stages: List<SessionStage> = emptyList(),
+    ) : Outbound
+
+    @Serializable
+    @SerialName("session_finished")
+    data class SessionFinished(
+        val sessionId: String,
+        val totalBytes: Int = 0,
+    ) : Outbound
+
+    @Serializable
+    @SerialName("project_theme")
+    data class ProjectThemeUpdated(
+        val projectId: String,
+        val tokens: Map<String, String> = emptyMap(),
+    ) : Outbound
+
+    @Serializable
     @SerialName("error")
     data class Error(val code: String, val message: String) : Outbound
 }
+
+@Serializable
+data class SessionStage(
+    val id: String,
+    val key: String,
+    val label: String,
+    val status: Int = 0,
+)
+
+data class SessionSnapshot(
+    val projectId: String,
+    val sessionId: String,
+    val seqNo: Int = 0,
+    val stages: List<SessionStage> = emptyList(),
+    val finished: Boolean = false,
+    val totalBytes: Int = 0,
+)
 
 enum class AgentRole { User, Agent, System }
 
