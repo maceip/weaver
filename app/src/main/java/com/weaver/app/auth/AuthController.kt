@@ -18,25 +18,22 @@ sealed interface AuthState {
 
 /**
  * Coordinates the Credential Manager sign-in with the headless WebView.
- * The WebView is pre-warmed by MainActivity before this runs; on success
- * we inject cookies and reload so Stitch picks up the authenticated session.
  *
- * Caveat (per the project-logged-out.html fixture): an unauthenticated
+ * Caveats (per the project-logged-out.html fixture): an unauthenticated
  * /projects/{id} request returns a 404 page, not a sign-in redirect.
  * Stitch's session cookies are minted by Google's OAuth handshake
  * (`usegapi=1` + `gapi.lb.en.*`), so a raw id_token from Credential
- * Manager is probably insufficient on its own — we may need to either
- * (a) briefly surface the WebView for Stitch's own Continue-with-Google
- * flow (one-time per account, then headless forever) or (b) exchange
- * the id_token server-side for session cookies. Current code path is
- * the optimistic "id_token + cookie hint" version; if CookieManager
- * doesn't carry a Stitch session marker after [signIn], we'll need to
- * fall back to (a) — track via [CookieInjector.hasStitchCookies].
+ * Manager is probably insufficient on its own. The full fix is a
+ * one-time visible WebView pass through Stitch's Continue-with-Google
+ * to capture cookies; until then, [devMode]=true short-circuits the
+ * Credential Manager call so an app built with the placeholder OAuth
+ * client id can still boot past the login gate for UI testing.
  */
 class AuthController(
     private val picker: AccountPicker,
     private val resolver: AccountResolver,
     private val webViewHost: WebViewHost,
+    private val devMode: Boolean = false,
 ) {
     private val _state = MutableStateFlow<AuthState>(AuthState.Unknown)
     val state: StateFlow<AuthState> = _state.asStateFlow()
@@ -49,13 +46,23 @@ class AuthController(
     }
 
     suspend fun signIn(activityContext: Context) {
+        if (devMode) {
+            // No real OAuth available — synthesize an anonymous identity so the
+            // app advances past the Login gate. The WebView still loads Stitch
+            // anonymously; the user can interact with the landing page or stay
+            // in our own Compose surfaces for UI testing.
+            val anon = Account(id = "dev-anonymous", email = "dev@local", displayName = "Dev (no auth)", idToken = null)
+            resolver.persist(anon)
+            webViewHost.load()
+            _state.value = AuthState.Authenticated(anon)
+            Log.i(TAG, "dev-mode sign-in: skipping Credential Manager (placeholder OAuth client id)")
+            return
+        }
         _state.value = AuthState.Authenticating
         val account = picker.show(activityContext)
         if (account != null) {
             CookieInjector.apply(account)
-            // Reload so Stitch picks up the new session cookies. The WebView was
-            // pre-warmed against an anonymous page; this navigates the same
-            // renderer instead of cold-starting a new one.
+            // Reload so Stitch picks up the new session cookies.
             webViewHost.load()
             _state.value = AuthState.Authenticated(account)
         } else {

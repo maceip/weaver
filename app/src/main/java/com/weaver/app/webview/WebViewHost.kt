@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -62,6 +63,11 @@ class WebViewHost(
         // console, Performance, source-stepping into Stitch. Debug-only.
         WebView.setWebContentsDebuggingEnabled(true)
 
+        // Cookies need to be explicit. Default is "accept" on API 21+ but
+        // setAcceptThirdPartyCookies has to be set per WebView, and we want
+        // session cookies (no expiration) to survive process death.
+        CookieManager.getInstance().setAcceptCookie(true)
+
         val view = WebView(appContext).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -72,7 +78,18 @@ class WebViewHost(
             settings.allowUniversalAccessFromFileURLs = false
             settings.mediaPlaybackRequiresUserGesture = false
             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            settings.userAgentString = settings.userAgentString + " Weaver/0.1"
+
+            // Strip the "; wv)" marker that Google services use to detect
+            // Android WebViews and refuse / degrade their UI. Replace the
+            // wv-only "Version/x.x" token with nothing so we look like
+            // plain mobile Chrome. The HAR we have of Stitch traffic was
+            // recorded against a UA without the marker — match that shape.
+            val rawUa = settings.userAgentString
+            val sanitized = rawUa
+                .replace(Regex("; wv\\)"), ")")
+                .replace(Regex(" Version/[\\d.]+"), "")
+            settings.userAgentString = "$sanitized Weaver/0.1"
+            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
             if (WebViewFeature.isFeatureSupported(WebViewFeature.OFF_SCREEN_PRERASTER)) {
                 WebViewCompat.setWebViewRenderProcessClient(this, null)
@@ -161,6 +178,8 @@ class WebViewHost(
                 }
 
                 override fun onPageFinished(view: WebView, url: String?) {
+                    Log.d(TAG, "load finished: $url")
+                    CookieManager.getInstance().flush()
                     injectContentScript(view)
                 }
 

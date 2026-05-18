@@ -42,7 +42,10 @@ class MainActivity : ComponentActivity() {
         val app = application as WeaverApp
 
         bridge = Bridge(interceptor)
-        webViewHost = WebViewHost(applicationContext, bridge)
+        // WebView gets the Activity context, not Application — needed for the
+        // correct theme/density/window-manager wiring even though we keep the
+        // WebView invisible.
+        webViewHost = WebViewHost(this, bridge)
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
             // is on top. The repository ignores the call if no draft is current.
@@ -51,7 +54,8 @@ class MainActivity : ComponentActivity() {
         }
         foldObserver = FoldObserver(this, bridge)
         val picker = AccountPicker(this, ServerClientIds.WEB_OAUTH, app.accountResolver)
-        authController = AuthController(picker, app.accountResolver, webViewHost)
+        val isDevMode = ServerClientIds.WEB_OAUTH == "REPLACE_WITH_OAUTH_WEB_CLIENT_ID"
+        authController = AuthController(picker, app.accountResolver, webViewHost, devMode = isDevMode)
 
         // ──────────────────────────────────────────────────────────────────────
         // PRE-WARM: create the WebView and start loading Stitch immediately, before
@@ -60,12 +64,22 @@ class MainActivity : ComponentActivity() {
         // with the login gate. If we already have a persisted account, we apply
         // cookies first so Stitch loads straight into the authenticated session.
         // ──────────────────────────────────────────────────────────────────────
+        // Hidden WebView at full-activity size. A 1×1 viewport would put
+        // Stitch into the smallest mobile bucket and React Flow simply
+        // won't mount — we need a real viewport for the canvas to render.
+        // alpha = 0 on the host keeps it invisible behind the Compose tree.
         val hiddenHost = FrameLayout(this).apply {
-            layoutParams = ViewGroup.LayoutParams(1, 1)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+            alpha = 0f
         }
         val webView = webViewHost.create().apply {
-            layoutParams = ViewGroup.LayoutParams(1, 1)
-            alpha = 0f
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
             visibility = View.VISIBLE
         }
         hiddenHost.addView(webView)
