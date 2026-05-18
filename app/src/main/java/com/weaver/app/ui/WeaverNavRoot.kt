@@ -7,10 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
@@ -35,30 +31,37 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.weaver.app.assets.BitmapCache
+import com.weaver.app.auth.AuthController
+import com.weaver.app.auth.AuthState
 import com.weaver.app.bridge.AttachmentKind
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.CanvasTool
 import com.weaver.app.bridge.Inbound
 import com.weaver.app.bridge.Preset
 import com.weaver.app.bridge.StitchNode
+import com.weaver.app.data.ProjectRepository
 import com.weaver.app.fold.FoldObserver
 import com.weaver.app.fold.FoldState
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun WeaverNavRoot(
     bridge: Bridge,
     presets: List<Preset>,
+    authController: AuthController,
+    projectRepository: ProjectRepository,
     bitmapCache: BitmapCache? = null,
     foldObserver: FoldObserver? = null,
 ) {
+    val authState by authController.state.collectAsState()
     val nodes by bridge.nodes.collectAsState()
     val selection by bridge.selection.collectAsState()
     val foldState = foldObserver?.state?.collectAsState()?.value
     var promptState by remember { mutableStateOf(PromptInputState()) }
     var activeTool by remember { mutableStateOf(CanvasTool.Cursor) }
+    var currentProjectId by remember { mutableStateOf<String?>(null) }
 
-    val backStack = rememberNavBackStack(Overview)
+    val backStack = rememberNavBackStack(Login)
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
     val directive = remember(windowAdaptiveInfo) {
@@ -70,18 +73,22 @@ fun WeaverNavRoot(
         directive = directive,
     )
 
-    // Bridge selection drives the back stack: when Stitch reports a multi-select,
-    // open the MultiSelect destination if we're sitting on Overview.
+    // Once authenticated, jump straight to Home.
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Authenticated && backStack.lastOrNull() is Login) {
+            backStack.clear()
+            backStack.add(Home)
+        }
+    }
+
+    // Sync bridge selection into the back stack while inside a project.
     LaunchedEffect(selection) {
         val top = backStack.lastOrNull()
+        if (top is Login || top is Home) return@LaunchedEffect
         when {
-            selection.size > 1 && top !is MultiSelect -> {
-                if (top !is Focused) backStack.add(MultiSelect)
-            }
-            selection.isEmpty() && top is MultiSelect -> {
-                backStack.removeLastOrNull()
-            }
-            selection.size == 1 && top is Focused && (top as Focused).nodeId != selection.first() -> {
+            selection.size > 1 && top !is MultiSelect && top !is Focused -> backStack.add(MultiSelect)
+            selection.isEmpty() && top is MultiSelect -> backStack.removeLastOrNull()
+            selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
                 backStack.removeLastOrNull()
                 backStack.add(Focused(selection.first()))
             }
@@ -92,69 +99,92 @@ fun WeaverNavRoot(
         promptState = promptState.copy(activeSlash = null)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    val title = when (val top = backStack.lastOrNull()) {
-                        is Focused -> top.nodeId
-                        MultiSelect -> "${selection.size} selected"
-                        else -> "Weaver"
-                    }
-                    Text(title)
-                },
-            )
-        },
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            NavDisplay(
-                backStack = backStack,
-                onBack = {
-                    // Mirror back into the bridge so Stitch doesn't keep a stale focus.
-                    val top = backStack.lastOrNull()
-                    backStack.removeLastOrNull()
-                    if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
-                },
-                sceneStrategies = listOf(supportingPaneStrategy),
-                entryProvider = entryProvider {
-                    entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) {
-                        OverviewPane(
-                            nodes = nodes,
-                            primary = selection.firstOrNull(),
-                            bridge = bridge,
-                            bitmapCache = bitmapCache,
-                            onFocus = dropUnlessResumed { id ->
-                                bridge.send(Inbound.SelectNode(id))
-                                backStack.add(Focused(id))
-                            },
-                        )
-                    }
-                    entry<Focused>(metadata = SupportingPaneSceneStrategy.supportingPane()) { route ->
-                        val node = nodes.firstOrNull { it.id == route.nodeId }
-                        if (node != null) {
-                            FocusedPane(
-                                node = node,
-                                neighbour = nodes.getOrNull(nodes.indexOf(node) + 1)
-                                    ?: nodes.getOrNull(nodes.indexOf(node) - 1),
-                                isWide = foldIsWide(foldState),
-                                bridge = bridge,
-                                bitmapCache = bitmapCache,
-                                selection = selection,
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavDisplay(
+            backStack = backStack,
+            onBack = {
+                val top = backStack.lastOrNull()
+                backStack.removeLastOrNull()
+                if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
+                // Leaving the project root drops the cached project id.
+                if (top is Overview && backStack.lastOrNull() is Home) currentProjectId = null
+            },
+            sceneStrategies = listOf(supportingPaneStrategy),
+            entryProvider = entryProvider {
+                entry<Login> {
+                    LoginScreen(
+                        authController = authController,
+                        state = authState,
+                        onAuthenticated = {
+                            // No-op: the LaunchedEffect above advances the stack.
+                        },
+                    )
+                }
+                entry<Home>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                    HomeScreen(
+                        repository = projectRepository,
+                        onOpen = dropUnlessResumed { project ->
+                            projectRepository.touch(project.id)
+                            currentProjectId = project.id
+                            backStack.add(Overview)
+                            // TODO: tell the bridge which Stitch project to navigate to;
+                            // for now Stitch's own UI handles project selection.
+                        },
+                        onNewProject = dropUnlessResumed { seedPrompt ->
+                            val project = projectRepository.newProject(
+                                title = seedPrompt.take(40).ifBlank { "Untitled" },
                             )
-                        }
-                    }
-                    entry<MultiSelect>(metadata = SupportingPaneSceneStrategy.mainPane()) {
-                        MultiSelectPane(
-                            nodes = nodes.filter { it.id in selection },
-                            selection = selection,
+                            currentProjectId = project.id
+                            backStack.add(Overview)
+                            bridge.send(
+                                Inbound.SubmitPrompt(
+                                    text = seedPrompt,
+                                    presetId = null,
+                                    modelId = null,
+                                ),
+                            )
+                        },
+                    )
+                }
+                entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                    OverviewPane(
+                        nodes = nodes,
+                        primary = selection.firstOrNull(),
+                        bridge = bridge,
+                        bitmapCache = bitmapCache,
+                        onFocus = dropUnlessResumed { id ->
+                            bridge.send(Inbound.SelectNode(id))
+                            backStack.add(Focused(id))
+                        },
+                    )
+                }
+                entry<Focused>(metadata = SupportingPaneSceneStrategy.supportingPane()) { route ->
+                    val node = nodes.firstOrNull { it.id == route.nodeId }
+                    if (node != null) {
+                        FocusedPane(
+                            node = node,
+                            neighbour = nodes.getOrNull(nodes.indexOf(node) + 1)
+                                ?: nodes.getOrNull(nodes.indexOf(node) - 1),
+                            isWide = foldIsWide(foldState),
                             bridge = bridge,
                             bitmapCache = bitmapCache,
+                            selection = selection,
                         )
                     }
-                },
-            )
+                }
+                entry<MultiSelect>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                    MultiSelectPane(
+                        nodes = nodes.filter { it.id in selection },
+                        selection = selection,
+                        bridge = bridge,
+                        bitmapCache = bitmapCache,
+                    )
+                }
+            },
+        )
 
-            // Tool palette is a chrome element — sits over whichever scene is active.
+        // Chrome — tool palette + prompt dock — only visible inside a project.
+        if (backStack.lastOrNull() !is Login && backStack.lastOrNull() !is Home) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)

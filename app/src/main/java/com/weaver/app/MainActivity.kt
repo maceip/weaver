@@ -1,7 +1,6 @@
 package com.weaver.app
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -12,21 +11,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.lifecycleScope
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.weaver.app.auth.AccountPicker
-import com.weaver.app.auth.CookieInjector
+import com.weaver.app.auth.AuthController
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.Preset
 import com.weaver.app.fold.FoldObserver
 import com.weaver.app.ui.WeaverNavRoot
 import com.weaver.app.ui.theme.WeaverTheme
-import com.weaver.app.webview.STITCH_URL
 import com.weaver.app.webview.WebViewHost
-import kotlinx.coroutines.launch
-
-private const val TAG = "WeaverMain"
 
 class MainActivity : ComponentActivity() {
 
@@ -34,7 +28,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var bridge: Bridge
     private lateinit var webViewHost: WebViewHost
     private lateinit var foldObserver: FoldObserver
-    private lateinit var accountPicker: AccountPicker
+    private lateinit var authController: AuthController
 
     private val builtinPresets: List<Preset> = listOf(
         Preset("alexandria", "Alexandria", listOf("#1E3A5F", "#F4D35E", "#2E2E2E"), isBuiltin = true),
@@ -45,14 +39,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val app = application as WeaverApp
+
         bridge = Bridge(interceptor)
         webViewHost = WebViewHost(applicationContext, bridge)
         foldObserver = FoldObserver(this, bridge)
-        val app = application as WeaverApp
-        accountPicker = AccountPicker(this, ServerClientIds.WEB_OAUTH, app.accountResolver)
+        val picker = AccountPicker(this, ServerClientIds.WEB_OAUTH, app.accountResolver)
+        authController = AuthController(picker, app.accountResolver, webViewHost)
 
-        // 1x1 transparent host so the WebView renderer keeps executing while Compose owns the
-        // visible surface. WebView throttles aggressively when fully detached.
+        // ──────────────────────────────────────────────────────────────────────
+        // PRE-WARM: create the WebView and start loading Stitch immediately, before
+        // any Compose surface is drawn. This warms the renderer process, DNS, TLS,
+        // JS engine, and content-script injection while the user is interacting
+        // with the login gate. If we already have a persisted account, we apply
+        // cookies first so Stitch loads straight into the authenticated session.
+        // ──────────────────────────────────────────────────────────────────────
         val hiddenHost = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(1, 1)
         }
@@ -63,6 +64,15 @@ class MainActivity : ComponentActivity() {
         }
         hiddenHost.addView(webView)
 
+        // Bootstrap auth from persisted account (if any) before the first load,
+        // otherwise load anonymously so we have a warm renderer ready to reload
+        // after Credential Manager succeeds.
+        if (app.accountResolver.current() != null) {
+            authController.bootstrap()
+        } else {
+            webViewHost.load()
+        }
+
         setContent {
             WeaverTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -70,6 +80,8 @@ class MainActivity : ComponentActivity() {
                     WeaverNavRoot(
                         bridge = bridge,
                         presets = builtinPresets,
+                        authController = authController,
+                        projectRepository = app.projectRepository,
                         bitmapCache = app.bitmapCache,
                         foldObserver = foldObserver,
                     )
@@ -78,19 +90,6 @@ class MainActivity : ComponentActivity() {
         }
 
         foldObserver.observe(this)
-
-        lifecycleScope.launch {
-            val existing = app.accountResolver.current()
-            if (existing != null) {
-                CookieInjector.apply(existing)
-                webViewHost.load(STITCH_URL)
-            } else {
-                val picked = accountPicker.show(this@MainActivity)
-                if (picked != null) CookieInjector.apply(picked)
-                else Log.w(TAG, "no account selected; loading Stitch unauthenticated")
-                webViewHost.load(STITCH_URL)
-            }
-        }
     }
 
     override fun onDestroy() {
