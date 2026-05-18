@@ -34,7 +34,14 @@ internal object StitchContentScript {
     private const val COMPOSER_SELECTOR = "textarea[placeholder*=\"change or create\"]"
     private const val SEND_BUTTON_SELECTOR = "[data-testid=\"generate-button\"]"
     private const val DESELECT_PANE_SELECTOR = "[data-testid=\"rf__background\"]"
-    private const val AGENT_LOG_SELECTOR = ".chat-tiptap-v3 .tiptap.ProseMirror"
+
+    // Correction: `.chat-tiptap-v3 .tiptap.ProseMirror` is the prompt composer
+    // (Tiptap variant), NOT the agent log. The real agent log entries are rows
+    // of `<span class="text-sm block whitespace-nowrap truncate">{message}</span>`
+    // with a sibling check-circle SVG inside the expandable "Agent log" panel.
+    // We anchor heuristically on the truncate span pattern; refine when Stitch
+    // gives a wrapping class with "agent" in it.
+    private const val AGENT_LOG_ENTRY_SELECTOR = "span.text-sm.block.whitespace-nowrap.truncate"
 
     val source: String = buildString {
         append("(function(){")
@@ -52,14 +59,22 @@ internal object StitchContentScript {
 
         append("function nodeThumb(el){var img=el.querySelector('img[src*=\"googleusercontent\"], img[src^=\"https://\"]');return img?img.src:null;}")
 
-        append("function snapshotNodes(){var nodes=[],els=document.querySelectorAll('").append(NODE_SELECTOR).append("');for(var i=0;i<els.length;i++){var el=els[i];var pos=parseTranslate(el);var w=parseFloat(el.style.width)||0;var h=parseFloat(el.style.height)||0;nodes.push({id:el.getAttribute('data-id')||el.getAttribute('data-testid').replace('rf__node-',''),type:nodeType(el),label:nodeLabel(el),x:pos.x,y:pos.y,w:w,h:h,thumb:nodeThumb(el),selected:el.classList.contains('selected')});}emit('nodes_updated',{nodes:nodes});}")
+        // Per-node generation state: any descendant <img data-stitch-pending-src>
+        // means the image hasn't streamed in yet; data-stitch-anim-opacity means
+        // it's currently being revealed. Either => Streaming, else Complete.
+        append("function nodeGenState(el){if(el.querySelector('img[data-stitch-pending-src]'))return'Streaming';if(el.querySelector('[data-stitch-anim-opacity]'))return'Streaming';return'Complete';}")
+
+        append("function snapshotNodes(){var nodes=[],els=document.querySelectorAll('").append(NODE_SELECTOR).append("'),progress={};for(var i=0;i<els.length;i++){var el=els[i];var pos=parseTranslate(el);var w=parseFloat(el.style.width)||0;var h=parseFloat(el.style.height)||0;var id=el.getAttribute('data-id')||el.getAttribute('data-testid').replace('rf__node-','');var gs=nodeGenState(el);if(gs!=='Complete')progress[id]=gs;nodes.push({id:id,type:nodeType(el),label:nodeLabel(el),x:pos.x,y:pos.y,w:w,h:h,thumb:nodeThumb(el),selected:el.classList.contains('selected')});}emit('nodes_updated',{nodes:nodes});for(var k in progress){emit('generation_progress',{id:k,state:progress[k]});}}")
+
+        // Read Stitch's own config blob if present. Lets us know project id,
+        // session targetOrigin, and animation flags without scraping the URL.
+        append("function emitStitchConfig(){try{var c=window.__STITCH_CONFIG__;if(c){emit('error',{code:'stitch_config',message:JSON.stringify({screenId:c.screenId||null,targetOrigin:c.targetOrigin||null,disableAnimations:!!c.disableAnimations})});}}catch(e){}}")
 
         append("function selectionFromDom(){var ids=[],sel=document.querySelectorAll('").append(NODE_SELECTOR).append(".selected');for(var i=0;i<sel.length;i++){ids.push(sel[i].getAttribute('data-id'));}emit('selection_changed',{ids:ids});}")
 
-        // Tiptap/ProseMirror reads cleanly — each <p> is one chat turn. Role detection
-        // is heuristic (look for assistant-only css classes on the parent), defaults
-        // to Agent. Refine when Stitch labels roles in the DOM.
-        append("function agentLogFromDom(){var root=document.querySelector('").append(AGENT_LOG_SELECTOR).append("');if(!root)return;var ps=root.querySelectorAll('p'),entries=[];for(var i=0;i<ps.length;i++){var p=ps[i];var t=(p.textContent||'').trim();if(!t)continue;var role='Agent';var cls=(p.className||'')+' '+((p.parentElement&&p.parentElement.className)||'');if(/user|prompt/i.test(cls))role='User';entries.push({id:'log-'+i,role:role,text:t,timestamp:Date.now()});}emit('agent_log_updated',{entries:entries});}")
+        // Agent log entries: pull text from each truncate span. Skip empties.
+        // De-duplicate (Stitch renders a marquee copy of the text per row).
+        append("function agentLogFromDom(){var spans=document.querySelectorAll('").append(AGENT_LOG_ENTRY_SELECTOR).append("'),entries=[],seen={};for(var i=0;i<spans.length;i++){var s=spans[i];var t=(s.textContent||'').trim();if(!t||seen[t])continue;seen[t]=1;entries.push({id:'log-'+i,role:'Agent',text:t,timestamp:Date.now()});}emit('agent_log_updated',{entries:entries});}")
 
         // Debounce DOM mutations. 100ms is generous; React Flow batches its own
         // updates, but pan/zoom + generation streaming combined can fire dozens
@@ -81,7 +96,7 @@ internal object StitchContentScript {
 
         // First snapshot once the canvas is in the DOM. Probe up to 10s, then emit
         // a selector_breakage diagnostic so we get telemetry rather than silence.
-        append("var tries=0;(function init(){var canvas=document.querySelector('.react-flow__viewport, .react-flow');if(canvas){startObserving();schedule();}else if(tries++<100){setTimeout(init,100);}else{emit('error',{code:'selector_breakage',message:'react-flow root never appeared after 10s'});}})();")
+        append("var tries=0;(function init(){var canvas=document.querySelector('.react-flow__viewport, .react-flow');if(canvas){emitStitchConfig();startObserving();schedule();}else if(tries++<100){setTimeout(init,100);}else{emit('error',{code:'selector_breakage',message:'react-flow root never appeared after 10s'});}})();")
 
         append("})();")
     }
