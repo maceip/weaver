@@ -7,13 +7,17 @@ import kotlinx.serialization.json.JsonElement
 @Serializable
 data class StitchNode(
     val id: String,
+    val type: NodeType = NodeType.Screen,
+    val label: String? = null,
     val x: Float = 0f,
     val y: Float = 0f,
     val w: Float = 0f,
     val h: Float = 0f,
     val thumb: String? = null,
-    val revision: Long = 0,
+    val selected: Boolean = false,
 )
+
+enum class NodeType { Screen, Asset, DesignSystem, Unknown }
 
 enum class GenerationState { Pending, Streaming, Complete, Failed }
 

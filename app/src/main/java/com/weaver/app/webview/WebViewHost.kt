@@ -15,7 +15,21 @@ import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.JsBridgeInterface
 
 private const val TAG = "WeaverWebView"
+
+// Public Stitch URL. The HTML we get back from this host is an Angular
+// "appcompanion" wrapper that loads the real React Flow editor inside
+// `<iframe sandbox="allow-scripts" srcdoc="...">`. Sandbox + srcdoc gives
+// the iframe a null origin, so the content script we inject into the parent
+// frame can't reach the editor's DOM.
+//
+// Resolution path (next pass): once auth is established, navigate the WebView
+// directly to `https://app-companion-430619.appspot.com/projects/{id}` so the
+// editor is the top-level frame and the content script runs in the right
+// context. We'll also need androidx.webkit WebMessageListener with
+// allowedOriginRules covering that host, since direct navigation may need
+// to fake out the `?parent=stitch.withgoogle.com` handshake.
 const val STITCH_URL = "https://stitch.withgoogle.com/"
+const val STITCH_DIRECT_PROJECT_URL_PREFIX = "https://app-companion-430619.appspot.com/projects/"
 
 class WebViewHost(
     private val appContext: Context,
