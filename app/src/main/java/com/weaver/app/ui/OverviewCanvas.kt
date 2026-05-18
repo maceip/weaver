@@ -129,7 +129,7 @@ private class FractionalPageSize(private val pages: Int) : PageSize {
 
 @Composable
 private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?, onTap: () -> Unit = {}) {
-    val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.revision, node.thumb) {
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.thumb) {
         val thumb = node.thumb
         value = if (thumb == null || bitmapCache == null) {
             null

@@ -36,15 +36,15 @@ val GeistMonoFamily = FontFamily(
 // Designer-supplied semantic ramp. Use for atoms; MaterialTheme.typography
 // below covers the rest of the surface.
 object WeaverType {
-    val Display = TextStyle(GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 26.sp, letterSpacing = (-0.4).sp)
-    val Title = TextStyle(GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp, letterSpacing = (-0.3).sp)
-    val CardTitle = TextStyle(GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, letterSpacing = (-0.1).sp)
-    val Body = TextStyle(GeistFamily, fontWeight = FontWeight.Normal, fontSize = 13.5.sp, lineHeight = 20.sp)
-    val BodyDim = TextStyle(GeistFamily, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, color = TextDim)
-    val Caption = TextStyle(GeistFamily, fontWeight = FontWeight.Medium, fontSize = 11.5.sp, color = TextDim)
-    val Mono = TextStyle(GeistMonoFamily, fontSize = 11.sp, letterSpacing = 0.3.sp, color = TextDim)
-    val MonoSmall = TextStyle(GeistMonoFamily, fontSize = 10.5.sp, letterSpacing = 0.4.sp, color = TextDim)
-    val Pill = TextStyle(GeistFamily, fontWeight = FontWeight.Medium, fontSize = 13.5.sp)
+    val Display = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 26.sp, letterSpacing = (-0.4).sp)
+    val Title = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp, letterSpacing = (-0.3).sp)
+    val CardTitle = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp, letterSpacing = (-0.1).sp)
+    val Body = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.Normal, fontSize = 13.5.sp, lineHeight = 20.sp)
+    val BodyDim = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, color = TextDim)
+    val Caption = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.Medium, fontSize = 11.5.sp, color = TextDim)
+    val Mono = TextStyle(fontFamily = GeistMonoFamily, fontSize = 11.sp, letterSpacing = 0.3.sp, color = TextDim)
+    val MonoSmall = TextStyle(fontFamily = GeistMonoFamily, fontSize = 10.5.sp, letterSpacing = 0.4.sp, color = TextDim)
+    val Pill = TextStyle(fontFamily = GeistFamily, fontWeight = FontWeight.Medium, fontSize = 13.5.sp)
 }
 
 val Typography = Typography(

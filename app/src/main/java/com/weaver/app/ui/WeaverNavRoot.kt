@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
@@ -24,9 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -63,7 +61,7 @@ fun WeaverNavRoot(
 
     val backStack = rememberNavBackStack(Login)
 
-    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+    val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val directive = remember(windowAdaptiveInfo) {
         calculatePaneScaffoldDirective(windowAdaptiveInfo)
             .copy(horizontalPartitionSpacerSize = 0.dp, verticalPartitionSpacerSize = 0.dp)
@@ -109,7 +107,7 @@ fun WeaverNavRoot(
                 // Leaving the project root drops the cached project id.
                 if (top is Overview && backStack.lastOrNull() is Home) currentProjectId = null
             },
-            sceneStrategies = listOf(supportingPaneStrategy),
+            sceneStrategy = supportingPaneStrategy,
             entryProvider = entryProvider {
                 entry<Login> {
                     LoginScreen(
@@ -123,14 +121,14 @@ fun WeaverNavRoot(
                 entry<Home>(metadata = SupportingPaneSceneStrategy.mainPane()) {
                     HomeScreen(
                         repository = projectRepository,
-                        onOpen = dropUnlessResumed { project ->
+                        onOpen = { project ->
                             projectRepository.touch(project.id)
                             currentProjectId = project.id
                             backStack.add(Overview)
                             // TODO: tell the bridge which Stitch project to navigate to;
                             // for now Stitch's own UI handles project selection.
                         },
-                        onNewProject = dropUnlessResumed { seedPrompt ->
+                        onNewProject = { seedPrompt ->
                             val project = projectRepository.newProject(
                                 title = seedPrompt.take(40).ifBlank { "Untitled" },
                             )
@@ -152,7 +150,7 @@ fun WeaverNavRoot(
                         primary = selection.firstOrNull(),
                         bridge = bridge,
                         bitmapCache = bitmapCache,
-                        onFocus = dropUnlessResumed { id ->
+                        onFocus = { id ->
                             bridge.send(Inbound.SelectNode(id))
                             backStack.add(Focused(id))
                         },

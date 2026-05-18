@@ -3,10 +3,13 @@ package com.weaver.app.webview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewCompat
@@ -41,6 +44,11 @@ class WebViewHost(
 
     @SuppressLint("SetJavaScriptEnabled")
     fun create(): WebView {
+        // Remote DevTools: with this enabled, chrome://inspect on a desktop
+        // browser (over `adb forward`) gives full DevTools — Network panel,
+        // console, Performance, source-stepping into Stitch. Debug-only.
+        WebView.setWebContentsDebuggingEnabled(true)
+
         val view = WebView(appContext).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -82,6 +90,18 @@ class WebViewHost(
                 override fun onProgressChanged(view: WebView, newProgress: Int) {
                     if (newProgress == 100) injectContentScript(view)
                 }
+
+                override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                    val tag = "WeaverJS"
+                    val line = "[${message.messageLevel().name}] " +
+                        "${message.message()} (${message.sourceId()}:${message.lineNumber()})"
+                    when (message.messageLevel()) {
+                        ConsoleMessage.MessageLevel.ERROR -> Log.e(tag, line)
+                        ConsoleMessage.MessageLevel.WARNING -> Log.w(tag, line)
+                        else -> Log.d(tag, line)
+                    }
+                    return true
+                }
             }
 
             webViewClient = object : WebViewClient() {
@@ -96,6 +116,23 @@ class WebViewHost(
 
                 override fun onPageFinished(view: WebView, url: String?) {
                     injectContentScript(view)
+                }
+
+                override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
+                    // HAR-equivalent surface: every request flows through here.
+                    // We never modify the response, just log the method+URL so the
+                    // Dari notification + logcat give us a network timeline without
+                    // needing to attach a desktop devtools. Stitch traffic is
+                    // distinguishable by host filter.
+                    val url = req.url.toString()
+                    val host = req.url.host ?: ""
+                    if (host.endsWith("stitch.withgoogle.com") ||
+                        host.endsWith("appspot.com") ||
+                        host.endsWith("googleusercontent.com")
+                    ) {
+                        Log.d("WeaverNet", "${req.method} ${SystemClock.elapsedRealtime()}ms $url")
+                    }
+                    return null
                 }
 
                 override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {

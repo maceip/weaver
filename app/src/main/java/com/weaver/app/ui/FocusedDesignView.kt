@@ -49,7 +49,7 @@ fun FocusedDesignView(
     bitmapCache: BitmapCache? = null,
     modifier: Modifier = Modifier,
 ) {
-    val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.revision, node.thumb) {
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.thumb) {
         val thumb = node.thumb
         value = if (thumb == null || bitmapCache == null) {
             null
