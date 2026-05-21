@@ -14,19 +14,31 @@ android {
         applicationId = "com.weaver.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI overrides these via -PweaverVersionCode / -PweaverVersionName so the
+        // APK metadata matches the git tag the release workflow cuts. Local
+        // builds fall back to the defaults.
+        versionCode = (project.findProperty("weaverVersionCode") as String?)?.toIntOrNull() ?: 1
+        versionName = (project.findProperty("weaverVersionName") as String?) ?: "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 full mode: code shrinking + optimization + obfuscation.
+            isMinifyEnabled = true
+            // Strip unused resources (drawables, layouts, strings) the
+            // shrunk code no longer references.
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        debug {
+            // Keep debug builds fast and fully debuggable — no shrinking.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
     compileOptions {

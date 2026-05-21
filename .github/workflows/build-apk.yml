@@ -1,10 +1,8 @@
-name: Build APK
+name: Build & Release
 
 on:
   push:
-    branches:
-      - main
-      - 'claude/**'
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -13,15 +11,40 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-apk-${{ github.ref }}
-  cancel-in-progress: true
+  group: build-release-${{ github.ref }}
+  # Never cancel an in-flight run on main — it may be mid-release.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  build-debug:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: version
+        run: |
+          set -eu
+          LATEST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$LATEST" ]; then
+            TAG="v0.1.0"
+          else
+            VER=${LATEST#v}
+            MAJOR=$(echo "$VER" | cut -d. -f1)
+            MINOR=$(echo "$VER" | cut -d. -f2)
+            PATCH=$(echo "$VER" | cut -d. -f3)
+            TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Next version: $TAG  (versionCode = run #${{ github.run_number }})"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -49,33 +72,49 @@ jobs:
       - name: Ensure gradlew is executable
         run: chmod +x ./gradlew
 
-      - name: Build :app debug APK
-        # -x installGitHooks: the root build wires installGitHooks into preBuild
-        # to install a local pre-commit hook. CI has no use for it and the
-        # task confuses a fresh checkout.
-        # --stacktrace: full Kotlin compiler error context when something fails.
-        # --no-daemon: pointless in CI where the JVM is one-shot anyway.
-        run: ./gradlew :app:assembleDebug -x installGitHooks --no-daemon --stacktrace
+      - name: Build debug APK
+        run: >
+          ./gradlew :app:assembleDebug
+          -x installGitHooks --no-daemon --stacktrace
+          -PweaverVersionName=${{ steps.version.outputs.version }}
+          -PweaverVersionCode=${{ github.run_number }}
 
-      - name: Surface APK metadata
-        if: always()
+      - name: Build release APK (best-effort, unsigned)
+        id: release_apk
+        continue-on-error: true
+        run: >
+          ./gradlew :app:assembleRelease
+          -x installGitHooks --no-daemon --stacktrace
+          -PweaverVersionName=${{ steps.version.outputs.version }}
+          -PweaverVersionCode=${{ github.run_number }}
+
+      - name: Stage artifacts
         run: |
-          set +e
-          APK=app/build/outputs/apk/debug/app-debug.apk
-          if [ -f "$APK" ]; then
-            ls -lh "$APK"
-            echo "sha256=$(sha256sum "$APK" | cut -d' ' -f1)"
-            echo "size=$(stat -c%s "$APK") bytes"
+          set -eu
+          TAG=${{ steps.version.outputs.tag }}
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/weaver-${TAG}-debug.apk"
+          REL=app/build/outputs/apk/release/app-release-unsigned.apk
+          if [ -f "$REL" ]; then
+            cp "$REL" "dist/weaver-${TAG}-release-unsigned.apk"
           else
-            echo "::warning::APK not built (see build step logs above)"
+            echo "::warning::release APK not produced — debug only this run"
           fi
+          # The R8 mapping is required to symbolicate release crash traces;
+          # publish it paired with the exact APK it belongs to.
+          MAP=app/build/outputs/mapping/release/mapping.txt
+          if [ -f "$MAP" ]; then
+            cp "$MAP" "dist/weaver-${TAG}-release-mapping.txt"
+          fi
+          ( cd dist && sha256sum ./*.apk > SHA256SUMS.txt )
+          ls -lh dist
+          cat dist/SHA256SUMS.txt
 
-      - name: Upload debug APK
-        if: success()
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: weaver-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: weaver-apks
+          path: dist/
           if-no-files-found: error
           retention-days: 14
 
@@ -89,3 +128,63 @@ jobs:
             **/build/outputs/logs/
           if-no-files-found: ignore
           retention-days: 7
+
+  release:
+    needs: build
+    # Only on a real push to main (covers direct pushes and PR merges).
+    # Pull-request runs build + attest-nothing; they never cut a release.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create tag + release
+      id-token: write       # OIDC for build attestation
+      attestations: write   # store the provenance attestation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: weaver-apks
+          path: dist
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          # Attests every APK we are about to publish. The provenance is keyed
+          # on the file digests, so the bytes uploaded to the release below
+          # must be the exact bytes attested here — they are (same files).
+          subject-path: 'dist/*.apk'
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag ${TAG} already exists — reusing it"
+          else
+            git tag -a "${TAG}" -m "Weaver ${TAG}"
+            git push origin "${TAG}"
+          fi
+
+      - name: Cut GitHub release and upload APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -eu
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "release ${TAG} exists — clobbering assets"
+            gh release upload "${TAG}" dist/* --clobber
+          else
+            gh release create "${TAG}" \
+              --title "Weaver ${TAG}" \
+              --generate-notes \
+              dist/*
+          fi
+          echo "Released ${TAG}: $(gh release view "${TAG}" --json url --jq .url)"
