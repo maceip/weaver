@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
 
         val app = application as WeaverApp
 
-        bridge = Bridge(interceptor)
+        bridge = Bridge(interceptor, app.outbox)
 
         // ── Transport routing ───────────────────────────────────────────────
         // Two backends behind one router with a circuit breaker:
@@ -122,6 +122,9 @@ class MainActivity : ComponentActivity() {
                         presets = builtinPresets,
                         authController = authController,
                         projectRepository = app.projectRepository,
+                        annotationStore = app.annotationStore,
+                        nodeCache = app.nodeCache,
+                        taskTracker = app.taskTracker,
                         bitmapCache = app.bitmapCache,
                         foldObserver = foldObserver,
                     )
@@ -134,6 +137,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         webViewHost.destroy()
+        bridge.dispose()
         super.onDestroy()
     }
 }

@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 data class FoldState(
     val isFolded: Boolean = false,
     val isHalfOpen: Boolean = false,
+    /** Half-open with a horizontal hinge — the propped-up "tabletop" posture. */
+    val isTabletop: Boolean = false,
     val widthPx: Int = 0,
     val heightPx: Int = 0,
 )
@@ -42,6 +44,8 @@ class FoldObserver(
                         isFolded = fold?.state == FoldingFeature.State.FLAT &&
                             fold.orientation == FoldingFeature.Orientation.VERTICAL,
                         isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
+                        isTabletop = fold?.state == FoldingFeature.State.HALF_OPENED &&
+                            fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
                         widthPx = bounds.width(),
                         heightPx = bounds.height(),
                     )

@@ -3,6 +3,12 @@ package com.weaver.app.bridge
 import android.util.Log
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.weaver.app.bridge.transport.BridgeTransport
+import com.weaver.app.bridge.transport.TransportStatus
+import com.weaver.app.offline.Outbox
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -19,6 +26,7 @@ private const val TAG = "WeaverBridge"
 
 class Bridge(
     private val interceptor: DariInterceptor? = null,
+    private val outbox: Outbox? = null,
 ) {
     val json: Json = Json {
         ignoreUnknownKeys = true
@@ -59,6 +67,13 @@ class Bridge(
 
     private var transport: BridgeTransport? = null
 
+    // Main dispatcher: outbox flushes call straight into the WebView transport.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    /** True while a transport can actually reach Stitch. Drives offline UI. */
+    private val _online = MutableStateFlow(false)
+    val online: StateFlow<Boolean> = _online.asStateFlow()
+
     /**
      * Bind the transport that carries bridge traffic. Pass a [BridgeRouter] to
      * get circuit-breaking between the local WebView and the remote session
@@ -67,10 +82,39 @@ class Bridge(
     fun bindTransport(transport: BridgeTransport) {
         this.transport = transport
         transport.setOutboundSink(::handleOutbound)
+        scope.launch {
+            transport.status.collect { status ->
+                val ready = status == TransportStatus.Ready
+                _online.value = ready
+                if (ready) flushOutbox()
+            }
+        }
     }
 
     fun unbindTransport() {
         transport = null
+        _online.value = false
+    }
+
+    /** Cancel the bridge's internal coroutines. Call from the Activity teardown. */
+    fun dispose() {
+        scope.cancel()
+    }
+
+    /** Seed the canvas from a cached snapshot — only if nothing live arrived yet. */
+    fun seedNodes(cached: List<StitchNode>) {
+        if (_nodes.value.isEmpty() && cached.isNotEmpty()) _nodes.value = cached
+    }
+
+    private fun flushOutbox() {
+        val ob = outbox ?: return
+        val t = transport ?: return
+        for (entry in ob.snapshot()) {
+            if (t.status.value != TransportStatus.Ready) break
+            t.sendInbound(entry.payload)
+            interceptor?.onAppToWebRequest("outbox_flush", null, entry.payload)
+            ob.remove(entry.id)
+        }
     }
 
     fun handleOutbound(raw: String) {
@@ -119,13 +163,18 @@ class Bridge(
     }
 
     fun send(message: Inbound) {
-        val pipe = transport ?: run {
-            Log.w(TAG, "send before bindTransport: $message")
-            return
-        }
         val payload = json.encodeToString(message)
         interceptor?.onAppToWebRequest(message::class.simpleName ?: "inbound", null, payload)
-        pipe.sendInbound(payload)
+        val pipe = transport
+        if (pipe != null && pipe.status.value == TransportStatus.Ready) {
+            pipe.sendInbound(payload)
+        } else if (message.isBufferable) {
+            // Offline or logged out — buffer the action, flush on reconnect.
+            outbox?.enqueue(message.outboxLabel, payload)
+                ?: Log.w(TAG, "no outbox — dropped $message")
+        } else {
+            Log.w(TAG, "transient inbound dropped while offline: $message")
+        }
     }
 
     fun rawEventDebug(raw: String): JsonObject? = runCatching {
