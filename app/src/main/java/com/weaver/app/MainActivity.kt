@@ -23,6 +23,7 @@ import com.weaver.app.bridge.transport.RemoteSessionTransport
 import com.weaver.app.fold.FoldObserver
 import com.weaver.app.ui.WeaverNavRoot
 import com.weaver.app.ui.theme.WeaverTheme
+import com.weaver.app.webview.WebViewFileChooser
 import com.weaver.app.webview.WebViewHost
 
 class MainActivity : ComponentActivity() {
@@ -66,6 +67,9 @@ class MainActivity : ComponentActivity() {
         // correct theme/density/window-manager wiring even though we keep the
         // WebView invisible.
         webViewHost = WebViewHost(this, bridge, localTransport)
+        // Register the native file pickers now — registerForActivityResult must
+        // run before the Activity is STARTED.
+        webViewHost.fileChooser = WebViewFileChooser(this)
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
             // is on top. The repository ignores the call if no draft is current.

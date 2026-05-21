@@ -3,6 +3,7 @@ package com.weaver.app.webview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
 import java.io.ByteArrayInputStream
@@ -11,6 +12,7 @@ import java.net.URL
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -51,6 +53,12 @@ class WebViewHost(
 
     var webView: WebView? = null
         private set
+
+    /**
+     * Routes WebView `<input type=file>` invocations to native Android pickers.
+     * Set from `MainActivity.onCreate`; until then file inputs are cancelled.
+     */
+    var fileChooser: WebViewFileChooser? = null
 
     /**
      * Fires whenever the WebView lands on a Stitch project URL, with the
@@ -169,6 +177,24 @@ class WebViewHost(
                         else -> Log.d(tag, line)
                     }
                     return true
+                }
+
+                // Stitch's "attach file" control opens a hidden <input type=file>.
+                // Route it to the native Photo Picker / SAF instead of the legacy
+                // (and on a headless WebView, invisible) chooser.
+                override fun onShowFileChooser(
+                    webView: WebView,
+                    filePathCallback: ValueCallback<Array<Uri>>,
+                    fileChooserParams: FileChooserParams,
+                ): Boolean {
+                    val chooser = fileChooser
+                    if (chooser == null) {
+                        Log.w(TAG, "file chooser requested before fileChooser was set")
+                        // Returning false hands the request back to the framework
+                        // default; we must NOT also invoke the callback ourselves.
+                        return false
+                    }
+                    return chooser.show(filePathCallback, fileChooserParams)
                 }
             }
 
