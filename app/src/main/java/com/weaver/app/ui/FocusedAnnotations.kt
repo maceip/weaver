@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StickyNote2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,7 +64,7 @@ fun FocusedAnnotations(
         }
         Box {
             IconButton(onClick = { noteOpen = true }) {
-                Icon(Icons.Filled.StickyNote2, contentDescription = "Add note")
+                Icon(Icons.AutoMirrored.Filled.StickyNote2, contentDescription = "Add note")
             }
             if (noteCount > 0) {
                 Box(
