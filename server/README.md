@@ -62,6 +62,33 @@ paste) is a separate workstream.
 | `src/bridge/protocol.ts` | WS envelope + the `Outbound`/`Inbound` mirror of the Kotlin schema |
 | `src/bridge/gateway.ts` | WS gateway: auth handshake, routes frames to/from the right session |
 
+## Authorization: the attestation gate
+
+Before any bridge traffic — before the id_token is even read — the WebSocket
+upgrade must carry a valid **Android Key Attestation** in the
+`X-Weaver-Attestation` header. `src/attestation/verifier.ts` (ported from the
+focused checks of [github.com/android/keyattestation](https://github.com/android/keyattestation))
+verifies it:
+
+1. the X.509 chain validates and roots in a Google hardware attestation CA
+   (`src/attestation/google-attestation-roots.json`),
+2. the leaf's Key Description extension names our package (`WEAVER_APP_PACKAGE`),
+3. a signing-cert digest in the extension is allowlisted
+   (`WEAVER_SIGNING_DIGESTS` — the key the GitHub CI build signs with).
+
+A desktop or scripted client cannot produce such a chain — only a genuine
+install of our CI-signed app on a real device can. This is the baseline that
+stops random users from hitting the API from the web. It is layered *under*
+the per-user id_token check (which establishes *which* user).
+
+`WEAVER_SIGNING_DIGESTS` is empty by default — the gate fails closed. Set
+`WEAVER_DEV_SKIP_ATTESTATION=1` to bypass it in local development only.
+
+Deferred vs. the full keyattestation library: certificate revocation, the
+full authorization-list constraint set, and a server-issued challenge for
+replay resistance (today the leaf challenge is client-generated; the
+chain + app-identity check does not depend on it).
+
 ## Transport protocol
 
 WebSocket. Each frame is JSON with a `kind` envelope:

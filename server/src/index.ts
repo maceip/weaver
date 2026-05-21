@@ -1,8 +1,10 @@
 import Fastify from "fastify";
 import { WebSocketServer } from "ws";
+import type { IncomingMessage } from "node:http";
 import { config } from "./config.js";
 import { ContextManager } from "./browser/contextManager.js";
 import { BridgeGateway } from "./bridge/gateway.js";
+import { verifyAttestation } from "./attestation/verifier.js";
 
 /**
  * Entry point. Fastify serves /healthz and /readyz; a raw `ws` server is
@@ -29,11 +31,21 @@ async function main(): Promise<void> {
 
   await app.ready();
   app.server.on("upgrade", (req, socket, head) => {
-    if (req.url !== "/bridge") {
-      socket.destroy();
-      return;
-    }
-    wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws));
+    void (async () => {
+      if (req.url !== "/bridge") {
+        socket.destroy();
+        return;
+      }
+      // Baseline authorization gate: the WS upgrade must carry a valid Android
+      // Key Attestation proving a genuine install of our CI-signed app on a
+      // real device. This runs BEFORE the id_token check — it keeps scripted
+      // / desktop clients off the API entirely.
+      if (!(await attestationGate(req, app.log))) {
+        socket.destroy();
+        return;
+      }
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws));
+    })();
   });
 
   await app.listen({ port: config.port, host: config.host });
@@ -50,6 +62,30 @@ async function main(): Promise<void> {
   };
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   process.on("SIGINT", () => void shutdown("SIGINT"));
+}
+
+/** True iff the upgrade request carries an acceptable Key Attestation. */
+async function attestationGate(
+  req: IncomingMessage,
+  log: { warn: (m: string) => void },
+): Promise<boolean> {
+  if (config.devSkipAttestation) return true;
+
+  const raw = req.headers["x-weaver-attestation"];
+  const chain = Array.isArray(raw) ? raw[0] : raw;
+  if (!chain) {
+    log.warn("WS upgrade rejected: no X-Weaver-Attestation header");
+    return false;
+  }
+  const result = await verifyAttestation(chain, {
+    expectedPackage: config.appPackage,
+    allowedSignatureDigests: config.signingDigests,
+  });
+  if (!result.ok) {
+    log.warn(`WS upgrade rejected: attestation ${result.code} — ${result.message}`);
+    return false;
+  }
+  return true;
 }
 
 main().catch((err) => {

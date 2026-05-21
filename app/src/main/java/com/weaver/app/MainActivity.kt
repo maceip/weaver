@@ -14,6 +14,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.weaver.app.auth.AccountPicker
+import com.weaver.app.auth.AttestationProvider
 import com.weaver.app.auth.AuthController
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.Preset
@@ -52,11 +53,13 @@ class MainActivity : ComponentActivity() {
         //  - remote : the AWS session bridge (always authenticated, costs a hop)
         // The router prefers local when it holds a Stitch session, else remote.
         val localTransport = LocalWebViewTransport()
+        val attestationProvider = AttestationProvider()
         val remoteTransport = RemoteSessionTransport(
             endpoint = ServerEndpoints.SESSION_BRIDGE,
             deviceId = app.deviceId,
             idTokenProvider = { app.accountResolver.current()?.idToken },
             json = bridge.json,
+            attestationHeader = attestationProvider::attestationHeader,
         )
         val router = BridgeRouter(localTransport, remoteTransport)
         bridge.bindTransport(router)
