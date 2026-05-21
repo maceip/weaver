@@ -48,6 +48,13 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            // android.util.Log etc. return defaults instead of throwing in
+            // plain JVM unit tests — lets us test logic that logs.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {

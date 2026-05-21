@@ -50,42 +50,11 @@ object CookieInjector {
      * cookies can be present but stale, and only the editor mounting proves
      * the session is actually live.
      */
-    fun probeGoogleSession(): SessionSignal = classify(
-        cookieHeader = CookieManager.getInstance().getCookie(GOOGLE_DOMAIN),
-        sessionNames = GOOGLE_SESSION_COOKIES,
-    )
+    fun probeGoogleSession(): SessionSignal =
+        SessionClassifier.classifyGoogle(CookieManager.getInstance().getCookie(GOOGLE_DOMAIN))
 
-    fun probeStitchSession(): SessionSignal {
-        val names = cookieNames(CookieManager.getInstance().getCookie(STITCH_DOMAIN))
-        if (names.isEmpty()) return SessionSignal.SignedOut
-        // Anything beyond consent/prefs cookies implies an established session.
-        return if (names.any { it !in NON_SESSION_COOKIES }) {
-            SessionSignal.SignedIn
-        } else {
-            SessionSignal.SignedOut
-        }
-    }
-
-    private fun classify(cookieHeader: String?, sessionNames: Set<String>): SessionSignal {
-        val names = cookieNames(cookieHeader)
-        if (names.isEmpty()) return SessionSignal.SignedOut
-        return if (names.any { it in sessionNames }) SessionSignal.SignedIn else SessionSignal.SignedOut
-    }
-
-    private fun cookieNames(header: String?): List<String> =
-        header?.split(";")
-            ?.mapNotNull { it.substringBefore("=").trim().takeIf(String::isNotEmpty) }
-            ?: emptyList()
-
-    /** Google's account-session cookies. Presence of any one means signed in. */
-    private val GOOGLE_SESSION_COOKIES = setOf(
-        "SID", "__Secure-1PSID", "__Secure-3PSID", "SAPISID", "__Secure-3PAPISID",
-    )
-
-    /** Consent / preference cookies that do NOT imply an authenticated session. */
-    private val NON_SESSION_COOKIES = setOf(
-        "NID", "CONSENT", "SOCS", "AEC", "OTZ", "1P_JAR", "ACCOUNT_CHOOSER",
-    )
+    fun probeStitchSession(): SessionSignal =
+        SessionClassifier.classifyStitch(CookieManager.getInstance().getCookie(STITCH_DOMAIN))
 }
 
 enum class SessionSignal {

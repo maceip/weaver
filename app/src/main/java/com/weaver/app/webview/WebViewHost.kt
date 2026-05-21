@@ -244,17 +244,8 @@ class WebViewHost(
         webView?.loadUrl(url)
     }
 
-    /**
-     * Stitch project URLs look like
-     *   https://stitch.withgoogle.com/projects/<20-digit-numeric>
-     *   https://app-companion-430619.appspot.com/projects/<20-digit-numeric>[?...]
-     * The iframe srcdoc URL also embeds the same id. Returns null when [url]
-     * is anything else (landing page, /assets, internal pings).
-     */
-    internal fun extractStitchProjectId(url: String): String? {
-        val regex = Regex("""/projects/(\d{8,})""")
-        return regex.find(url)?.groupValues?.get(1)
-    }
+    internal fun extractStitchProjectId(url: String): String? =
+        StitchUrls.extractProjectId(url)
 
     fun destroy() {
         webView?.apply {
