@@ -1,6 +1,8 @@
 package com.weaver.app.bridge.transport
 
 import android.webkit.WebView
+import com.weaver.app.auth.CookieInjector
+import com.weaver.app.auth.SessionSignal
 import com.weaver.app.bridge.JsBridgeInterface
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,12 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
  * Outbound arrives through the [JsBridgeInterface] that the content script
  * posts to.
  *
- * The transport proves its own health from that outbound stream — it does not
- * need to be told. The content script only finds `.react-flow` and emits
- * `nodes_updated` on a real, authenticated Stitch editor; on the 404 / landing
- * page there is no canvas, so it emits `error{selector_breakage}` after its
- * 10s probe. So: first healthy editor event -> [TransportStatus.Ready];
- * selector breakage -> [TransportStatus.Degraded].
+ * Health is proven from two signals, fast-then-authoritative:
+ *
+ *  1. Cookie jar ([probeSession]) — synchronous, deterministic, available the
+ *     moment the page finishes loading. Google session cookies present ->
+ *     a provisional [TransportStatus.Ready]; absent -> [TransportStatus.Degraded].
+ *  2. Content-script traffic ([assessHealth]) — definitive. `nodes_updated`
+ *     can only come from a mounted React Flow editor (cookies present AND
+ *     still valid) -> [TransportStatus.Ready]; `error{selector_breakage}`
+ *     means no editor mounted (cookies stale or absent) -> [TransportStatus.Degraded].
+ *
+ * The cookie probe gives an instant verdict; the content script corrects it
+ * within seconds if the cookies turned out to be stale.
  */
 class LocalWebViewTransport : BridgeTransport {
     override val id = "local"
@@ -70,13 +78,30 @@ class LocalWebViewTransport : BridgeTransport {
 
     /**
      * Lifecycle nudge from WebViewHost (Connecting on page start). Ready and
-     * Degraded are NOT set here — those are proven from the outbound stream
-     * in [assessHealth]. This only moves the status backward (toward
-     * Connecting) so a navigation resets the proof.
+     * Degraded are NOT set here — those are proven by [probeSession] and
+     * [assessHealth]. This only moves the status backward (toward Connecting)
+     * so a navigation resets the proof.
      */
     fun reportLifecycle(status: TransportStatus) {
         if (status == TransportStatus.Connecting || status == TransportStatus.Failed) {
             _status.value = status
+        }
+    }
+
+    /**
+     * Fast cookie-jar probe — call once the page finishes loading (cookies are
+     * settled by then). Sets a provisional status that [assessHealth] later
+     * confirms or corrects from real editor traffic. Does not downgrade an
+     * already-confirmed [TransportStatus.Ready].
+     */
+    fun probeSession() {
+        if (_status.value == TransportStatus.Ready) return // already confirmed by traffic
+        val google = CookieInjector.probeGoogleSession()
+        val stitch = CookieInjector.probeStitchSession()
+        _status.value = when {
+            stitch == SessionSignal.SignedIn || google == SessionSignal.SignedIn ->
+                TransportStatus.Ready
+            else -> TransportStatus.Degraded
         }
     }
 

@@ -38,8 +38,63 @@ object CookieInjector {
         cm.removeAllCookies { cm.flush(); onDone() }
     }
 
-    fun hasStitchCookies(): Boolean {
-        val cookies = CookieManager.getInstance().getCookie(STITCH_DOMAIN)
-        return !cookies.isNullOrBlank()
+    /**
+     * Fast, synchronous, deterministic readiness signal — read straight from
+     * the WebView cookie jar, no page load or content-script round-trip.
+     *
+     * [probeGoogleSession] looks for Google's well-known account session
+     * cookies. [probeStitchSession] looks for a session cookie on the Stitch
+     * host (the exact name is unknown without a live capture, so it treats any
+     * cookie that isn't a known consent/prefs cookie as session-ish). Pair the
+     * result with the content script's nodes_updated / selector_breakage —
+     * cookies can be present but stale, and only the editor mounting proves
+     * the session is actually live.
+     */
+    fun probeGoogleSession(): SessionSignal = classify(
+        cookieHeader = CookieManager.getInstance().getCookie(GOOGLE_DOMAIN),
+        sessionNames = GOOGLE_SESSION_COOKIES,
+    )
+
+    fun probeStitchSession(): SessionSignal {
+        val names = cookieNames(CookieManager.getInstance().getCookie(STITCH_DOMAIN))
+        if (names.isEmpty()) return SessionSignal.SignedOut
+        // Anything beyond consent/prefs cookies implies an established session.
+        return if (names.any { it !in NON_SESSION_COOKIES }) {
+            SessionSignal.SignedIn
+        } else {
+            SessionSignal.SignedOut
+        }
     }
+
+    private fun classify(cookieHeader: String?, sessionNames: Set<String>): SessionSignal {
+        val names = cookieNames(cookieHeader)
+        if (names.isEmpty()) return SessionSignal.SignedOut
+        return if (names.any { it in sessionNames }) SessionSignal.SignedIn else SessionSignal.SignedOut
+    }
+
+    private fun cookieNames(header: String?): List<String> =
+        header?.split(";")
+            ?.mapNotNull { it.substringBefore("=").trim().takeIf(String::isNotEmpty) }
+            ?: emptyList()
+
+    /** Google's account-session cookies. Presence of any one means signed in. */
+    private val GOOGLE_SESSION_COOKIES = setOf(
+        "SID", "__Secure-1PSID", "__Secure-3PSID", "SAPISID", "__Secure-3PAPISID",
+    )
+
+    /** Consent / preference cookies that do NOT imply an authenticated session. */
+    private val NON_SESSION_COOKIES = setOf(
+        "NID", "CONSENT", "SOCS", "AEC", "OTZ", "1P_JAR", "ACCOUNT_CHOOSER",
+    )
+}
+
+enum class SessionSignal {
+    /** A recognised session cookie is present. */
+    SignedIn,
+
+    /** No session cookie — either signed out or never signed in. */
+    SignedOut,
+
+    /** Cookie jar inconclusive; defer to the content-script signal. */
+    Unknown,
 }

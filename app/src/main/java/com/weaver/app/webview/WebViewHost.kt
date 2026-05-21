@@ -191,9 +191,10 @@ class WebViewHost(
                     Log.d(TAG, "load finished: $url")
                     CookieManager.getInstance().flush()
                     injectContentScript(view)
-                    // Status is NOT set here. The content script will prove the
-                    // session within a few seconds: nodes_updated -> Ready,
-                    // selector_breakage -> Degraded (see LocalWebViewTransport).
+                    // Fast verdict from the cookie jar now; the content script
+                    // confirms or corrects it within seconds (nodes_updated ->
+                    // Ready, selector_breakage -> Degraded).
+                    localTransport.probeSession()
                 }
 
                 override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
