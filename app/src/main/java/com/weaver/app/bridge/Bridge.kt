@@ -1,8 +1,8 @@
 package com.weaver.app.bridge
 
 import android.util.Log
-import android.webkit.WebView
 import com.easyhooon.dari.interceptor.DariInterceptor
+import com.weaver.app.bridge.transport.BridgeTransport
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,14 +57,20 @@ class Bridge(
     )
     val events: SharedFlow<Outbound> = _events.asSharedFlow()
 
-    private var webView: WebView? = null
+    private var transport: BridgeTransport? = null
 
-    fun attach(webView: WebView) {
-        this.webView = webView
+    /**
+     * Bind the transport that carries bridge traffic. Pass a [BridgeRouter] to
+     * get circuit-breaking between the local WebView and the remote session
+     * bridge. The transport delivers `Outbound` JSON back through [handleOutbound].
+     */
+    fun bindTransport(transport: BridgeTransport) {
+        this.transport = transport
+        transport.setOutboundSink(::handleOutbound)
     }
 
-    fun detach() {
-        webView = null
+    fun unbindTransport() {
+        transport = null
     }
 
     fun handleOutbound(raw: String) {
@@ -113,16 +119,13 @@ class Bridge(
     }
 
     fun send(message: Inbound) {
-        val view = webView ?: run {
-            Log.w(TAG, "send before attach: $message")
+        val pipe = transport ?: run {
+            Log.w(TAG, "send before bindTransport: $message")
             return
         }
         val payload = json.encodeToString(message)
         interceptor?.onAppToWebRequest(message::class.simpleName ?: "inbound", null, payload)
-        val escaped = payload.replace("\\", "\\\\").replace("'", "\\'")
-        view.post {
-            view.evaluateJavascript("window.__weaverBridge.receive('$escaped')", null)
-        }
+        pipe.sendInbound(payload)
     }
 
     fun rawEventDebug(raw: String): JsonObject? = runCatching {

@@ -20,8 +20,9 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.ExportKind
-import com.weaver.app.bridge.JsBridgeInterface
 import com.weaver.app.bridge.Outbound
+import com.weaver.app.bridge.transport.LocalWebViewTransport
+import com.weaver.app.bridge.transport.TransportStatus
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
@@ -45,6 +46,7 @@ const val STITCH_DIRECT_PROJECT_URL_PREFIX = "https://app-companion-430619.appsp
 class WebViewHost(
     private val appContext: Context,
     private val bridge: Bridge,
+    private val localTransport: LocalWebViewTransport,
 ) {
 
     var webView: WebView? = null
@@ -102,7 +104,10 @@ class WebViewHost(
             isFocusableInTouchMode = true
             visibility = View.VISIBLE
 
-            addJavascriptInterface(JsBridgeInterface(bridge), "Android")
+            // The `window.Android` object is owned by the local transport so
+            // its outbound traffic can be routed/circuit-broken alongside the
+            // remote session bridge.
+            addJavascriptInterface(localTransport.jsInterface, "Android")
 
             // Stitch exports go through a Content-Disposition: attachment GET to
             // contribution.usercontent.google.com/download?c=<base64-protobuf>.
@@ -170,6 +175,7 @@ class WebViewHost(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                     Log.d(TAG, "load start: $url")
+                    localTransport.reportStatus(TransportStatus.Connecting)
                     if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
                         // Fallback: best-effort early injection. Stitch may already
                         // have grabbed window.fetch by the time this runs.
@@ -184,6 +190,12 @@ class WebViewHost(
                     Log.d(TAG, "load finished: $url")
                     CookieManager.getInstance().flush()
                     injectContentScript(view)
+                    // Page is up, but whether it carries a Stitch session is
+                    // unknown here — mark Degraded so the router prefers the
+                    // always-authenticated remote bridge until the local
+                    // session proves itself. AuthController flips this to
+                    // Ready once cookies are confirmed.
+                    localTransport.reportStatus(TransportStatus.Degraded)
                 }
 
                 override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
@@ -220,7 +232,7 @@ class WebViewHost(
                 }
             }
         }
-        bridge.attach(view)
+        localTransport.bindWebView(view)
         webView = view
         return view
     }
@@ -251,7 +263,7 @@ class WebViewHost(
             removeJavascriptInterface("Android")
             destroy()
         }
-        bridge.detach()
+        localTransport.stop()
         webView = null
     }
 

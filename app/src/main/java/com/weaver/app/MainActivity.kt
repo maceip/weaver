@@ -17,6 +17,9 @@ import com.weaver.app.auth.AccountPicker
 import com.weaver.app.auth.AuthController
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.Preset
+import com.weaver.app.bridge.transport.BridgeRouter
+import com.weaver.app.bridge.transport.LocalWebViewTransport
+import com.weaver.app.bridge.transport.RemoteSessionTransport
 import com.weaver.app.fold.FoldObserver
 import com.weaver.app.ui.WeaverNavRoot
 import com.weaver.app.ui.theme.WeaverTheme
@@ -42,10 +45,27 @@ class MainActivity : ComponentActivity() {
         val app = application as WeaverApp
 
         bridge = Bridge(interceptor)
+
+        // ── Transport routing ───────────────────────────────────────────────
+        // Two backends behind one router with a circuit breaker:
+        //  - local  : the bundled on-device WebView (cheap, may be unauthenticated)
+        //  - remote : the AWS session bridge (always authenticated, costs a hop)
+        // The router prefers local when it holds a Stitch session, else remote.
+        val localTransport = LocalWebViewTransport()
+        val remoteTransport = RemoteSessionTransport(
+            endpoint = ServerEndpoints.SESSION_BRIDGE,
+            deviceId = app.deviceId,
+            idTokenProvider = { app.accountResolver.current()?.idToken },
+            json = bridge.json,
+        )
+        val router = BridgeRouter(localTransport, remoteTransport)
+        bridge.bindTransport(router)
+        router.start()
+
         // WebView gets the Activity context, not Application — needed for the
         // correct theme/density/window-manager wiring even though we keep the
         // WebView invisible.
-        webViewHost = WebViewHost(this, bridge)
+        webViewHost = WebViewHost(this, bridge, localTransport)
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
             // is on top. The repository ignores the call if no draft is current.
@@ -120,5 +140,13 @@ class MainActivity : ComponentActivity() {
 
 object ServerClientIds {
     // Wire the real OAuth Web client id via gradle/BuildConfig before shipping.
+    // This same value must be in the session bridge's WEAVER_ALLOWED_AUDIENCES.
     const val WEB_OAUTH: String = "REPLACE_WITH_OAUTH_WEB_CLIENT_ID"
+}
+
+object ServerEndpoints {
+    // The AWS session bridge WebSocket. Replace with the ALB host (wss://, TLS
+    // terminated at the load balancer). Until set, RemoteSessionTransport fails
+    // to connect and the router stays on the local WebView.
+    const val SESSION_BRIDGE: String = "wss://REPLACE_WITH_BRIDGE_HOST/bridge"
 }
