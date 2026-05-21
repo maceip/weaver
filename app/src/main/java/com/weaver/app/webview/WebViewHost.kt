@@ -175,7 +175,8 @@ class WebViewHost(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                     Log.d(TAG, "load start: $url")
-                    localTransport.reportStatus(TransportStatus.Connecting)
+                    // Reset the proof — the new page hasn't shown an editor yet.
+                    localTransport.reportLifecycle(TransportStatus.Connecting)
                     if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
                         // Fallback: best-effort early injection. Stitch may already
                         // have grabbed window.fetch by the time this runs.
@@ -190,12 +191,9 @@ class WebViewHost(
                     Log.d(TAG, "load finished: $url")
                     CookieManager.getInstance().flush()
                     injectContentScript(view)
-                    // Page is up, but whether it carries a Stitch session is
-                    // unknown here — mark Degraded so the router prefers the
-                    // always-authenticated remote bridge until the local
-                    // session proves itself. AuthController flips this to
-                    // Ready once cookies are confirmed.
-                    localTransport.reportStatus(TransportStatus.Degraded)
+                    // Status is NOT set here. The content script will prove the
+                    // session within a few seconds: nodes_updated -> Ready,
+                    // selector_breakage -> Degraded (see LocalWebViewTransport).
                 }
 
                 override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
