@@ -40,12 +40,16 @@ class WebViewFileChooser(activity: ComponentActivity) {
         pending = callback
         singleSelect = params.mode != WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
 
-        val accepts = params.acceptTypes.orEmpty().filter { it.isNotBlank() }
-        val mediaType = visualMediaType(accepts)
-        if (mediaType != null) {
-            pickMedia.launch(PickVisualMediaRequest(mediaType))
-        } else {
-            openDocuments.launch(mimeFilter(accepts))
+        val accepts = params.acceptTypes.orEmpty().toList()
+        when (chooserTarget(accepts)) {
+            ChooserTarget.ImageOnly ->
+                pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+            ChooserTarget.VideoOnly ->
+                pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.VideoOnly))
+            ChooserTarget.ImageAndVideo ->
+                pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
+            ChooserTarget.Documents ->
+                openDocuments.launch(mimeFilter(accepts))
         }
         return true
     }
@@ -57,22 +61,29 @@ class WebViewFileChooser(activity: ComponentActivity) {
     }
 }
 
-/** Photo Picker type when every accepted type is image/video, else null (use SAF). */
-private fun visualMediaType(accepts: List<String>): PickVisualMedia.VisualMediaType? {
-    if (accepts.isEmpty()) return null
-    val image = accepts.all { it.startsWith("image/") }
-    val video = accepts.all { it.startsWith("video/") }
-    val mediaOnly = accepts.all { it.startsWith("image/") || it.startsWith("video/") }
+internal enum class ChooserTarget { ImageOnly, VideoOnly, ImageAndVideo, Documents }
+
+/**
+ * Classifies a file input's `accept` list into the picker to show. The Photo
+ * Picker only handles media, so it's used only when *every* accepted type is
+ * image/video; any other type (code, text, `.fig`, …) falls back to SAF.
+ */
+internal fun chooserTarget(accepts: List<String>): ChooserTarget {
+    val types = accepts.filter { it.isNotBlank() }
+    if (types.isEmpty()) return ChooserTarget.Documents
+    val image = types.all { it.startsWith("image/") }
+    val video = types.all { it.startsWith("video/") }
+    val mediaOnly = types.all { it.startsWith("image/") || it.startsWith("video/") }
     return when {
-        image -> PickVisualMedia.ImageOnly
-        video -> PickVisualMedia.VideoOnly
-        mediaOnly -> PickVisualMedia.ImageAndVideo
-        else -> null
+        image -> ChooserTarget.ImageOnly
+        video -> ChooserTarget.VideoOnly
+        mediaOnly -> ChooserTarget.ImageAndVideo
+        else -> ChooserTarget.Documents
     }
 }
 
 /** SAF filters on MIME types only; drop bare extensions and fall back to `*/*`. */
-private fun mimeFilter(accepts: List<String>): Array<String> {
-    val mimes = accepts.filter { "/" in it }
+internal fun mimeFilter(accepts: List<String>): Array<String> {
+    val mimes = accepts.filter { it.isNotBlank() && "/" in it }
     return if (mimes.isEmpty()) arrayOf("*/*") else mimes.toTypedArray()
 }

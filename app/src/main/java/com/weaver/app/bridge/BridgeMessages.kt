@@ -23,7 +23,12 @@ enum class GenerationState { Pending, Streaming, Complete, Failed }
 
 enum class AssetKind { Thumbnail, FullRender }
 
-enum class ExportKind { Figma, Zip, AiStudio, RawCode }
+/**
+ * Stitch's export targets, mirroring its own `EXPORT_CLICK_*` telemetry enum
+ * (Figma=1, Code=2, Download=3, Firebase=4, AIS=5, Jules=6, Lovable=7, Bolt=8).
+ * [Figma]/[Zip] land as downloads; the rest are handoffs to other tools.
+ */
+enum class ExportKind { Figma, CopyCode, Zip, Firebase, AiStudio, Jules, Lovable, Bolt }
 
 enum class SlashCommand { Image, Logo, Diagram, Animate }
 

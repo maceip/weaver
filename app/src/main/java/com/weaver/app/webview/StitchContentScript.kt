@@ -92,6 +92,21 @@ internal object StitchContentScript {
         append("case 'clear_selection':{var bg=document.querySelector('").append(DESELECT_PANE_SELECTOR).append("')||document.querySelector('.react-flow__pane');if(bg){bg.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:1,clientY:1}));bg.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,clientX:1,clientY:1}));bg.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:1,clientY:1}));}break;}")
         append("case 'viewport_changed':{window.dispatchEvent(new Event('resize'));break;}")
         append("case 'synthesize_input':{var e=m.event||{};var t=e.target?document.querySelector(e.target):document.activeElement;if(!t)return;if(e.event==='click')t.click();else if(e.event==='keydown')t.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,bubbles:true}));break;}")
+        // Drive Stitch's Export menu: open it, then click the menu item whose
+        // text matches the requested kind. Figma/Download sit in the top menu;
+        // the tool handoffs live behind a nested "Export" item, so we expand
+        // that once if the target isn't visible. Labels are the one patch point.
+        append("case 'request_export':{")
+        append("var EX={Figma:['copy to figma'],CopyCode:['copy code','code'],Zip:['download'],Firebase:['firebase'],AiStudio:['ai studio','google ai studio'],Jules:['jules'],Lovable:['lovable'],Bolt:['bolt']};")
+        append("var want=EX[m.kind];if(!want){emit('error',{code:'export_kind_unknown',message:String(m.kind)});break;}")
+        append("var eb=null,bs=document.querySelectorAll('button');for(var i=0;i<bs.length;i++){if((bs[i].textContent||'').trim()==='Export'){eb=bs[i];break;}}")
+        append("if(!eb){emit('error',{code:'export_button_missing',message:'Export toolbar button not found'});break;}")
+        append("eb.click();var et=0,subTried=false;")
+        append("(function pickExport(){var items=document.querySelectorAll('[role=\"menuitem\"]');")
+        append("for(var i=0;i<items.length;i++){var t=(items[i].textContent||'').trim().toLowerCase();for(var j=0;j<want.length;j++){if(t.indexOf(want[j])===0){items[i].click();return;}}}")
+        append("if(!subTried){for(var k=0;k<items.length;k++){if((items[k].textContent||'').trim().toLowerCase().indexOf('export')===0){items[k].click();subTried=true;break;}}}")
+        append("if(et++<30){setTimeout(pickExport,100);}else{emit('error',{code:'export_item_missing',message:'no export menu item matched '+m.kind});}})();")
+        append("break;}")
         append("}}};")
 
         // First snapshot once the canvas is in the DOM. Probe up to 10s, then emit

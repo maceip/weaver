@@ -126,11 +126,11 @@ class WebViewHost(
             // so the Compose layer can hand it to Android's DownloadManager (or
             // an InputStream copy) and surface the saved file.
             setDownloadListener { url, _, contentDisposition, mimeType, contentLength ->
+                // Only Figma and the code bundle arrive as downloads; "copy code"
+                // and the tool handoffs never hit this listener.
                 val kind = when {
-                    url.contains(".zip") || mimeType == "application/zip" -> ExportKind.Zip
                     url.contains(".fig") || mimeType.contains("figma") -> ExportKind.Figma
-                    mimeType.startsWith("text/html") -> ExportKind.RawCode
-                    else -> ExportKind.RawCode
+                    else -> ExportKind.Zip
                 }
                 val payload = buildJsonObject {
                     put("url", JsonPrimitive(url))

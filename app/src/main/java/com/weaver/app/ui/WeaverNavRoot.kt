@@ -20,8 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.Context
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
@@ -58,6 +60,12 @@ fun WeaverNavRoot(
     var promptState by remember { mutableStateOf(PromptInputState()) }
     var activeTool by remember { mutableStateOf(CanvasTool.Cursor) }
     var currentProjectId by remember { mutableStateOf<String?>(null) }
+
+    // Honest signal for ranking the export sheet: we can detect the Figma app
+    // is installed, but not whether the user is signed in — Figma exposes no
+    // such API and its cookies are cross-origin to our WebView.
+    val context = LocalContext.current
+    val figmaInstalled = remember { isFigmaInstalled(context) }
 
     val backStack = rememberNavBackStack(Login)
 
@@ -167,6 +175,7 @@ fun WeaverNavRoot(
                             bridge = bridge,
                             bitmapCache = bitmapCache,
                             selection = selection,
+                            figmaInstalled = figmaInstalled,
                         )
                     }
                 }
@@ -176,6 +185,7 @@ fun WeaverNavRoot(
                         selection = selection,
                         bridge = bridge,
                         bitmapCache = bitmapCache,
+                        figmaInstalled = figmaInstalled,
                     )
                 }
             },
@@ -229,6 +239,10 @@ private fun OverviewPane(
     )
 }
 
+private fun isFigmaInstalled(context: Context): Boolean = runCatching {
+    context.packageManager.getLaunchIntentForPackage("com.figma.mirror") != null
+}.getOrDefault(false)
+
 @Composable
 private fun FocusedPane(
     node: StitchNode,
@@ -237,6 +251,7 @@ private fun FocusedPane(
     bridge: Bridge,
     bitmapCache: BitmapCache?,
     selection: List<String>,
+    figmaInstalled: Boolean,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (isWide && neighbour != null) {
@@ -261,6 +276,10 @@ private fun FocusedPane(
                 CanvasToolbar(
                     selectedIds = selection,
                     onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
+                    onExport = { kind, ids ->
+                        bridge.send(Inbound.RequestExport(kind, ids.firstOrNull()))
+                    },
+                    figmaInstalled = figmaInstalled,
                 )
             }
         }
@@ -283,6 +302,7 @@ private fun MultiSelectPane(
     selection: List<String>,
     bridge: Bridge,
     bitmapCache: BitmapCache?,
+    figmaInstalled: Boolean,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         OverviewCanvas(
@@ -300,6 +320,10 @@ private fun MultiSelectPane(
             CanvasToolbar(
                 selectedIds = selection,
                 onAction = { action, ids -> bridge.send(Inbound.Canvas(action, ids)) },
+                onExport = { kind, ids ->
+                    bridge.send(Inbound.RequestExport(kind, ids.firstOrNull()))
+                },
+                figmaInstalled = figmaInstalled,
             )
         }
     }

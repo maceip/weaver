@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TabletAndroid
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.weaver.app.bridge.CanvasAction
+import com.weaver.app.bridge.ExportKind
 
 /**
  * Floating toolbar shown over the focused-design surface. Swaps between
@@ -60,6 +62,8 @@ import com.weaver.app.bridge.CanvasAction
 fun CanvasToolbar(
     selectedIds: List<String>,
     onAction: (CanvasAction, List<String>) -> Unit,
+    onExport: (ExportKind, List<String>) -> Unit,
+    figmaInstalled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     if (selectedIds.isEmpty()) return
@@ -72,15 +76,21 @@ fun CanvasToolbar(
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         if (multi) MultiSelectActions(selectedIds, onAction)
-        else SingleSelectActions(selectedIds.first(), onAction)
+        else SingleSelectActions(selectedIds.first(), onAction, onExport, figmaInstalled)
     }
 }
 
 @Composable
-private fun SingleSelectActions(id: String, onAction: (CanvasAction, List<String>) -> Unit) {
+private fun SingleSelectActions(
+    id: String,
+    onAction: (CanvasAction, List<String>) -> Unit,
+    onExport: (ExportKind, List<String>) -> Unit,
+    figmaInstalled: Boolean,
+) {
     var generateOpen by remember { mutableStateOf(false) }
     var modifyOpen by remember { mutableStateOf(false) }
     var previewOpen by remember { mutableStateOf(false) }
+    var exportOpen by remember { mutableStateOf(false) }
     val ids = listOf(id)
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -102,11 +112,26 @@ private fun SingleSelectActions(id: String, onAction: (CanvasAction, List<String
         }
         Spacer(Modifier.width(4.dp))
 
+        IconButton(onClick = { exportOpen = true }) {
+            Icon(Icons.Filled.Upload, contentDescription = "Export")
+        }
+        Spacer(Modifier.width(2.dp))
+        Text("Export", style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.width(4.dp))
+
         IconButton(onClick = { onAction(CanvasAction.More, ids) }) {
             Icon(Icons.Filled.MoreVert, contentDescription = "More")
         }
         Spacer(Modifier.width(2.dp))
         Text("More", style = MaterialTheme.typography.labelLarge)
+    }
+
+    if (exportOpen) {
+        ExportSheet(
+            figmaInstalled = figmaInstalled,
+            onPick = { kind -> exportOpen = false; onExport(kind, ids) },
+            onDismiss = { exportOpen = false },
+        )
     }
 }
 
