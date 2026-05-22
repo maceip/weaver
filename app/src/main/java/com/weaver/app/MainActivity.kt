@@ -1,5 +1,6 @@
 package com.weaver.app
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,7 +10,9 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.animation.doOnEnd
 import androidx.core.content.IntentCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -46,8 +49,18 @@ class MainActivity : ComponentActivity() {
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Cross-fade the splash into the app rather than a hard cut.
+        splashScreen.setOnExitAnimationListener { splashView ->
+            ObjectAnimator.ofFloat(splashView.view, View.ALPHA, 1f, 0f).apply {
+                duration = 220L
+                doOnEnd { splashView.remove() }
+                start()
+            }
+        }
 
         val app = application as WeaverApp
 

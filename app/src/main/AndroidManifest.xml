@@ -34,7 +34,7 @@
             android:configChanges="screenSize|screenLayout|orientation|smallestScreenSize|keyboardHidden|density|uiMode"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Weaver">
+            android:theme="@style/Theme.Weaver.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
