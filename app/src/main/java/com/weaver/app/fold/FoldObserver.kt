@@ -24,6 +24,18 @@ data class FoldState(
     val heightPx: Int = 0,
 )
 
+/** Pure mapping of a [FoldingFeature] (if any) into a [FoldState]. */
+fun foldStateOf(fold: FoldingFeature?, widthPx: Int, heightPx: Int): FoldState =
+    FoldState(
+        isFolded = fold?.state == FoldingFeature.State.FLAT &&
+            fold.orientation == FoldingFeature.Orientation.VERTICAL,
+        isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
+        isTabletop = fold?.state == FoldingFeature.State.HALF_OPENED &&
+            fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
+        widthPx = widthPx,
+        heightPx = heightPx,
+    )
+
 class FoldObserver(
     private val activity: Activity,
     private val bridge: Bridge,
@@ -40,15 +52,7 @@ class FoldObserver(
                 tracker.windowLayoutInfo(activity).collect { info ->
                     val bounds = metricsCalculator.computeCurrentWindowMetrics(activity).bounds
                     val fold = info.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull()
-                    val next = FoldState(
-                        isFolded = fold?.state == FoldingFeature.State.FLAT &&
-                            fold.orientation == FoldingFeature.Orientation.VERTICAL,
-                        isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
-                        isTabletop = fold?.state == FoldingFeature.State.HALF_OPENED &&
-                            fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
-                        widthPx = bounds.width(),
-                        heightPx = bounds.height(),
-                    )
+                    val next = foldStateOf(fold, bounds.width(), bounds.height())
                     if (next != _state.value) {
                         _state.value = next
                         bridge.send(Inbound.ViewportChanged(next.widthPx, next.heightPx))

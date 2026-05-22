@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 /**
@@ -108,6 +109,7 @@ private fun NoteDialog(onDismiss: () -> Unit, onSave: (String) -> Unit) {
                 value = text,
                 onValueChange = { text = it },
                 placeholder = { Text("Saved on-device, synced when online") },
+                modifier = Modifier.testTag("noteField"),
             )
         },
         confirmButton = {
