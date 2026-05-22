@@ -13,7 +13,7 @@
 
     <application
         android:name=".WeaverApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
@@ -23,15 +23,33 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Weaver">
 
+        <!-- Profile release builds on-device (Studio profiler / simpleperf);
+             no runtime cost. -->
+        <profileable android:shell="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:configChanges="screenSize|screenLayout|orientation|smallestScreenSize|keyboardHidden|density|uiMode"
             android:resizeableActivity="true"
-            android:theme="@style/Theme.Weaver">
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Weaver.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Share target: accept any file (or text) shared from another app
+                 so it can be uploaded straight into the open Stitch project. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
 

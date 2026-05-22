@@ -6,4 +6,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Launch theme: the system splash, then hands off to Theme.Weaver. -->
+    <style name="Theme.Weaver.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/weaver_splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_weave</item>
+        <item name="windowSplashScreenAnimationDuration">500</item>
+        <item name="postSplashScreenTheme">@style/Theme.Weaver</item>
+    </style>
 </resources>

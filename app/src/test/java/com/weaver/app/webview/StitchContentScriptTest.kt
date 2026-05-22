@@ -14,15 +14,20 @@ class StitchContentScriptTest {
     private val source = StitchContentScript.source
 
     @Test
-    fun handlesRequestExport() {
+    fun requestExportHandlerOpensTheMenuAndMatchesAnItem() {
         assertTrue(source.contains("case 'request_export'"))
+        // Drives Stitch's own Export menu: matches a [role=menuitem] by text.
+        assertTrue(source.contains("[role=\"menuitem\"]"))
     }
 
     @Test
-    fun handlesAttachFilesByInjectingIntoTheFileInput() {
+    fun attachFilesHandlerInjectsViaDataTransferAndDispatchesChange() {
         assertTrue(source.contains("case 'attach_files'"))
         assertTrue(source.contains("new DataTransfer()"))
         assertTrue(source.contains("input[type=\"file\"]"))
+        assertTrue(source.contains("inp.files=dt.files"))
+        // Stitch only uploads when the change event fires — it must be dispatched.
+        assertTrue(source.contains("new Event('change'"))
     }
 
     @Test

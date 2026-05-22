@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Weaver splash mark. The two halves of the swap glyph slide in from opposite
+  edges and converge — the web<->native bridge "weaving" itself together —
+  while the whole mark settles up to full scale.
+-->
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="288dp"
+            android:height="288dp"
+            android:viewportWidth="960"
+            android:viewportHeight="960">
+            <group
+                android:name="root"
+                android:translateX="180"
+                android:translateY="180"
+                android:scaleX="0.625"
+                android:scaleY="0.625">
+                <group
+                    android:name="root_scale"
+                    android:pivotX="480"
+                    android:pivotY="480"
+                    android:scaleX="0.86"
+                    android:scaleY="0.86">
+                    <group
+                        android:name="arrowA"
+                        android:translateX="-300">
+                        <path
+                            android:name="pathA"
+                            android:fillAlpha="0"
+                            android:fillColor="#C5E8FB"
+                            android:pathData="M280,800 L80,600l200,-200 56,57 -103,103h287v80L233,640l103,103 -56,57Z" />
+                    </group>
+                    <group
+                        android:name="arrowB"
+                        android:translateX="300">
+                        <path
+                            android:name="pathB"
+                            android:fillAlpha="0"
+                            android:fillColor="#C5E8FB"
+                            android:pathData="M680,560 L624,503 727,400L440,400v-80h287L624,217l56,-57 200,200 -200,200Z" />
+                    </group>
+                </group>
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="arrowA">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="500"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translateX"
+                android:valueFrom="-300"
+                android:valueTo="0"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+
+    <target android:name="arrowB">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="500"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translateX"
+                android:valueFrom="300"
+                android:valueTo="0"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+
+    <target android:name="pathA">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="fillAlpha"
+                android:startOffset="80"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+
+    <target android:name="pathB">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="fillAlpha"
+                android:startOffset="80"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+
+    <target android:name="root_scale">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="500"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="scaleX"
+                    android:valueFrom="0.86"
+                    android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator
+                    android:duration="500"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="scaleY"
+                    android:valueFrom="0.86"
+                    android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>
