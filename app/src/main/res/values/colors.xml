@@ -7,4 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Splash ground — Weaver's canvas background (Color.kt `Bg`). -->
+    <color name="weaver_splash_bg">#FF0A0B0E</color>
 </resources>
