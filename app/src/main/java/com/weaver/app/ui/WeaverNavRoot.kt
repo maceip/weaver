@@ -1,12 +1,12 @@
 package com.weaver.app.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
@@ -19,17 +19,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import android.content.Context
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.weaver.app.agent.TaskTracker
 import com.weaver.app.assets.BitmapCache
 import com.weaver.app.auth.AuthController
 import com.weaver.app.auth.AuthState
@@ -37,11 +40,13 @@ import com.weaver.app.bridge.AttachmentKind
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.CanvasTool
 import com.weaver.app.bridge.Inbound
+import com.weaver.app.bridge.Outbound
 import com.weaver.app.bridge.Preset
 import com.weaver.app.bridge.StitchNode
 import com.weaver.app.data.ProjectRepository
 import com.weaver.app.fold.FoldObserver
-import com.weaver.app.fold.FoldState
+import com.weaver.app.offline.AnnotationStore
+import com.weaver.app.offline.NodeCache
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -51,16 +56,24 @@ fun WeaverNavRoot(
     authController: AuthController,
     projectRepository: ProjectRepository,
     onRequestUpload: () -> Unit,
+    annotationStore: AnnotationStore,
+    nodeCache: NodeCache,
+    taskTracker: TaskTracker,
     bitmapCache: BitmapCache? = null,
     foldObserver: FoldObserver? = null,
 ) {
     val authState by authController.state.collectAsState()
     val nodes by bridge.nodes.collectAsState()
     val selection by bridge.selection.collectAsState()
+    val sessions by bridge.sessions.collectAsState()
+    val online by bridge.online.collectAsState()
+    val annotations by annotationStore.state.collectAsState()
+    val tasks by taskTracker.tasks.collectAsState()
     val foldState = foldObserver?.state?.collectAsState()?.value
-    var promptState by remember { mutableStateOf(PromptInputState()) }
-    var activeTool by remember { mutableStateOf(CanvasTool.Cursor) }
-    var currentProjectId by remember { mutableStateOf<String?>(null) }
+    var promptState by rememberSaveable(stateSaver = PromptInputState.Saver) {
+        mutableStateOf(PromptInputState())
+    }
+    var activeTool by rememberSaveable { mutableStateOf(CanvasTool.Cursor) }
 
     // Honest signal for ranking the export sheet: we can detect the Figma app
     // is installed, but not whether the user is signed in — Figma exposes no
@@ -75,6 +88,9 @@ fun WeaverNavRoot(
         calculatePaneScaffoldDirective(windowAdaptiveInfo)
             .copy(horizontalPartitionSpacerSize = 0.dp, verticalPartitionSpacerSize = 0.dp)
     }
+    // One adaptive signal: room for two panes also means room for wide chrome.
+    val isWide = directive.maxHorizontalPartitions > 1
+    val isTabletop = foldState?.isTabletop == true
     val supportingPaneStrategy = rememberSupportingPaneSceneStrategy<NavKey>(
         backNavigationBehavior = BackNavigationBehavior.PopUntilCurrentDestinationChange,
         directive = directive,
@@ -88,17 +104,48 @@ fun WeaverNavRoot(
         }
     }
 
-    // Sync bridge selection into the back stack while inside a project.
+    // Sync bridge selection into the back stack while inside a project. Focused
+    // designs are PUSHED, never replaced — so clicking design A -> B -> C builds
+    // a real history and predictive back walks C -> B -> A -> overview.
     LaunchedEffect(selection) {
         val top = backStack.lastOrNull()
-        if (top is Login || top is Home) return@LaunchedEffect
+        if (top is Login || top is Home || top == null) return@LaunchedEffect
+        val projectId = backStack.currentProjectId() ?: return@LaunchedEffect
         when {
-            selection.size > 1 && top !is MultiSelect && top !is Focused -> backStack.add(MultiSelect)
-            selection.isEmpty() && top is MultiSelect -> backStack.removeLastOrNull()
-            selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
+            selection.size > 1 && top !is MultiSelect && top !is Focused ->
+                backStack.add(MultiSelect(projectId))
+
+            selection.isEmpty() && top is MultiSelect ->
                 backStack.removeLastOrNull()
-                backStack.add(Focused(selection.first()))
-            }
+
+            selection.size == 1 && top is Focused && top.nodeId != selection.first() ->
+                backStack.add(Focused(projectId, selection.first()))
+        }
+    }
+
+    // Persist the live canvas so a cold, offline relaunch isn't a blank screen.
+    LaunchedEffect(nodes) {
+        val projectId = backStack.currentProjectId()
+        if (projectId != null && nodes.isNotEmpty()) nodeCache.save(projectId, nodes)
+    }
+
+    // Buffered prompts have left the outbox once a transport is back.
+    LaunchedEffect(online) {
+        if (online) taskTracker.promoteQueued()
+    }
+
+    // Settle the oldest in-flight task whenever a streaming session finishes.
+    var settledFinished by remember { mutableStateOf(0) }
+    LaunchedEffect(sessions) {
+        val finished = sessions.values.count { it.finished }
+        repeat((finished - settledFinished).coerceAtLeast(0)) {
+            taskTracker.settleOldestRunning()
+        }
+        settledFinished = finished
+    }
+    LaunchedEffect(Unit) {
+        bridge.events.collect { event ->
+            if (event is Outbound.Error) taskTracker.settleOldestRunning(failed = true)
         }
     }
 
@@ -113,8 +160,6 @@ fun WeaverNavRoot(
                 val top = backStack.lastOrNull()
                 backStack.removeLastOrNull()
                 if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
-                // Leaving the project root drops the cached project id.
-                if (top is Overview && backStack.lastOrNull() is Home) currentProjectId = null
             },
             sceneStrategy = supportingPaneStrategy,
             entryProvider = entryProvider {
@@ -132,17 +177,13 @@ fun WeaverNavRoot(
                         repository = projectRepository,
                         onOpen = { project ->
                             projectRepository.touch(project.id)
-                            currentProjectId = project.id
-                            backStack.add(Overview)
-                            // TODO: tell the bridge which Stitch project to navigate to;
-                            // for now Stitch's own UI handles project selection.
+                            backStack.add(Overview(project.id))
                         },
                         onNewProject = { seedPrompt ->
                             val project = projectRepository.newProject(
                                 title = seedPrompt.take(40).ifBlank { "Untitled" },
                             )
-                            currentProjectId = project.id
-                            backStack.add(Overview)
+                            backStack.add(Overview(project.id))
                             bridge.send(
                                 Inbound.SubmitPrompt(
                                     text = seedPrompt,
@@ -150,10 +191,14 @@ fun WeaverNavRoot(
                                     modelId = null,
                                 ),
                             )
+                            taskTracker.submit(seedPrompt, queued = !online)
                         },
                     )
                 }
-                entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) { route ->
+                    LaunchedEffect(route.projectId) {
+                        bridge.seedNodes(nodeCache.load(route.projectId))
+                    }
                     OverviewPane(
                         nodes = nodes,
                         primary = selection.firstOrNull(),
@@ -161,7 +206,7 @@ fun WeaverNavRoot(
                         bitmapCache = bitmapCache,
                         onFocus = { id ->
                             bridge.send(Inbound.SelectNode(id))
-                            backStack.add(Focused(id))
+                            backStack.add(Focused(route.projectId, id))
                         },
                     )
                 }
@@ -172,11 +217,21 @@ fun WeaverNavRoot(
                             node = node,
                             neighbour = nodes.getOrNull(nodes.indexOf(node) + 1)
                                 ?: nodes.getOrNull(nodes.indexOf(node) - 1),
-                            isWide = foldIsWide(foldState),
+                            isWide = isWide,
                             bridge = bridge,
                             bitmapCache = bitmapCache,
                             selection = selection,
                             figmaInstalled = figmaInstalled,
+                            isFavorite = node.id in annotations.favorites,
+                            noteCount = annotations.notes.count { it.targetId == node.id },
+                            onToggleFavorite = {
+                                annotationStore.toggleFavorite(node.id)
+                                bridge.send(Inbound.ToggleFavorite(node.id))
+                            },
+                            onAddNote = { text ->
+                                annotationStore.addNote(node.id, text)
+                                bridge.send(Inbound.AddNote(node.id, text))
+                            },
                         )
                     }
                 }
@@ -192,8 +247,22 @@ fun WeaverNavRoot(
             },
         )
 
+        val top = backStack.lastOrNull()
+
+        // Floating agent orb — visible app-wide once past the login gate.
+        if (top !is Login) {
+            AgentOrb(
+                tasks = tasks,
+                online = online,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 12.dp, end = 12.dp),
+            )
+        }
+
         // Chrome — tool palette + prompt dock — only visible inside a project.
-        if (backStack.lastOrNull() !is Login && backStack.lastOrNull() !is Home) {
+        if (top !is Login && top !is Home) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -213,15 +282,16 @@ fun WeaverNavRoot(
                 presets = presets,
                 state = promptState,
                 onStateChange = { promptState = it },
-                scopeId = (backStack.lastOrNull() as? Focused)?.nodeId,
+                scopeId = (top as? Focused)?.nodeId,
                 onRequestUpload = onRequestUpload,
+                isWide = isWide,
+                isTabletop = isTabletop,
+                online = online,
+                onPromptSubmitted = { text -> taskTracker.submit(text, queued = !online) },
             )
         }
     }
 }
-
-private fun foldIsWide(state: FoldState?): Boolean =
-    (state?.widthPx ?: 0) >= 1600
 
 @Composable
 private fun OverviewPane(
@@ -254,6 +324,10 @@ private fun FocusedPane(
     bitmapCache: BitmapCache?,
     selection: List<String>,
     figmaInstalled: Boolean,
+    isFavorite: Boolean,
+    noteCount: Int,
+    onToggleFavorite: () -> Unit,
+    onAddNote: (String) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (isWide && neighbour != null) {
@@ -268,6 +342,16 @@ private fun FocusedPane(
         } else {
             FocusedDesignView(node = node, bitmapCache = bitmapCache)
         }
+
+        FocusedAnnotations(
+            isFavorite = isFavorite,
+            noteCount = noteCount,
+            onToggleFavorite = onToggleFavorite,
+            onAddNote = onAddNote,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 12.dp, top = 12.dp),
+        )
 
         if (selection.isNotEmpty()) {
             Box(
@@ -339,16 +423,25 @@ private fun PromptDock(
     onStateChange: (PromptInputState) -> Unit,
     scopeId: String?,
     onRequestUpload: () -> Unit,
+    isWide: Boolean,
+    isTabletop: Boolean,
+    online: Boolean,
+    onPromptSubmitted: (String) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 16.dp, start = 12.dp, end = 12.dp),
-        verticalArrangement = Arrangement.Bottom,
+    // On a large screen the dock is capped and centred rather than stretched
+    // edge-to-edge; on the tabletop posture it lifts into the lower panel.
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter,
     ) {
         PromptInput(
             state = state,
             presets = presets,
+            placeholder = if (online) {
+                "What would you like to change or create?"
+            } else {
+                "Offline — your request will be sent when you reconnect"
+            },
             onStateChange = onStateChange,
             onSubmit = {
                 val text = state.text.text.trim()
@@ -362,6 +455,7 @@ private fun PromptDock(
                         modelId = state.selectedModelId,
                     ),
                 )
+                onPromptSubmitted(text)
                 onStateChange(state.copy(text = TextFieldValue("")))
             },
             onAttach = { kind ->
@@ -376,6 +470,13 @@ private fun PromptDock(
             onVoice = {
                 // TODO: launch speech recognizer, then dispatch Inbound.VoiceInput
             },
+            modifier = Modifier
+                .widthIn(max = if (isWide) 760.dp else Dp.Unspecified)
+                .padding(
+                    start = 12.dp,
+                    end = 12.dp,
+                    bottom = if (isTabletop) 48.dp else 16.dp,
+                ),
         )
     }
 }

@@ -21,7 +21,9 @@
         { "name": "PORT", "value": "8080" },
         { "name": "WEAVER_ALLOWED_AUDIENCES", "value": "REPLACE_WITH_OAUTH_WEB_CLIENT_ID" },
         { "name": "WEAVER_MAX_CONTEXTS", "value": "40" },
-        { "name": "WEAVER_CONTEXT_IDLE_MS", "value": "900000" }
+        { "name": "WEAVER_CONTEXT_IDLE_MS", "value": "900000" },
+        { "name": "WEAVER_APP_PACKAGE", "value": "com.weaver.app" },
+        { "name": "WEAVER_SIGNING_DIGESTS", "value": "REPLACE_WITH_BASE64_SHA256_OF_CI_SIGNING_CERT" }
       ],
       "linuxParameters": {
         "initProcessEnabled": true

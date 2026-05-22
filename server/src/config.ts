@@ -46,6 +46,24 @@ export const config = {
 
   /** Run Chromium headed (debugging). Headless in prod. */
   headed: bool("WEAVER_HEADED"),
+
+  // ── Key-attestation gate ────────────────────────────────────────────────
+  /** Required APK package name in the attestation. */
+  appPackage: process.env.WEAVER_APP_PACKAGE ?? "com.weaver.app",
+
+  /**
+   * Allowlisted base64 SHA-256 APK signing-cert digests — the key minted by
+   * the GitHub CI build. A WS upgrade whose attestation does not carry one of
+   * these is rejected. Empty (the default) fails closed: with no allowlist,
+   * nothing passes unless [devSkipAttestation] is set.
+   */
+  signingDigests: (process.env.WEAVER_SIGNING_DIGESTS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+
+  /** DEV ONLY. Skips the attestation gate entirely. Never enable in prod. */
+  devSkipAttestation: bool("WEAVER_DEV_SKIP_ATTESTATION"),
 } as const;
 
 export type Config = typeof config;

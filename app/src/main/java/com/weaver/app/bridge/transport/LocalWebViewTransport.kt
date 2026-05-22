@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *  1. Cookie jar ([probeSession]) — synchronous, deterministic, available the
  *     moment the page finishes loading. Google session cookies present ->
  *     a provisional [TransportStatus.Ready]; absent -> [TransportStatus.Degraded].
- *  2. Content-script traffic ([assessHealth]) — definitive. `nodes_updated`
+ *  2. Content-script traffic (OutboundClassifier) — definitive. `nodes_updated`
  *     can only come from a mounted React Flow editor (cookies present AND
  *     still valid) -> [TransportStatus.Ready]; `error{selector_breakage}`
  *     means no editor mounted (cookies stale or absent) -> [TransportStatus.Degraded].
@@ -37,33 +37,10 @@ class LocalWebViewTransport : BridgeTransport {
     private var outboundSink: ((String) -> Unit)? = null
     private var webView: WebView? = null
 
-    private val typeRegex = Regex("\"type\"\\s*:\\s*\"([^\"]+)\"")
-
     /** The `window.Android` object — hand this to `addJavascriptInterface`. */
     val jsInterface = JsBridgeInterface { json ->
-        assessHealth(json)
+        OutboundClassifier.classify(json)?.let { _status.value = it }
         outboundSink?.invoke(json)
-    }
-
-    /**
-     * Self-assessment from the content script's own traffic. `nodes_updated`
-     * can only come from a mounted React Flow editor, which only renders for
-     * an authenticated session — that is the proof the local WebView has a
-     * usable Stitch session. `selector_breakage` is the opposite proof.
-     */
-    private fun assessHealth(outboundJson: String) {
-        when (typeRegex.find(outboundJson)?.groupValues?.get(1)) {
-            "nodes_updated", "selection_changed", "agent_log_updated",
-            "session_started", "session_progress",
-            -> _status.value = TransportStatus.Ready
-            "error" -> {
-                if (outboundJson.contains("selector_breakage") ||
-                    outboundJson.contains("canvas_missing")
-                ) {
-                    _status.value = TransportStatus.Degraded
-                }
-            }
-        }
     }
 
     override fun setOutboundSink(sink: (String) -> Unit) {
@@ -79,7 +56,7 @@ class LocalWebViewTransport : BridgeTransport {
     /**
      * Lifecycle nudge from WebViewHost (Connecting on page start). Ready and
      * Degraded are NOT set here — those are proven by [probeSession] and
-     * [assessHealth]. This only moves the status backward (toward Connecting)
+     * OutboundClassifier. This only moves the status backward (toward Connecting)
      * so a navigation resets the proof.
      */
     fun reportLifecycle(status: TransportStatus) {
@@ -90,7 +67,7 @@ class LocalWebViewTransport : BridgeTransport {
 
     /**
      * Fast cookie-jar probe — call once the page finishes loading (cookies are
-     * settled by then). Sets a provisional status that [assessHealth] later
+     * settled by then). Sets a provisional status that OutboundClassifier later
      * confirms or corrects from real editor traffic. Does not downgrade an
      * already-confirmed [TransportStatus.Ready].
      */

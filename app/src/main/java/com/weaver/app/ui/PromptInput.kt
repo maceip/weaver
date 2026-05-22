@@ -45,6 +45,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,7 +78,35 @@ data class PromptInputState(
     val activeSlash: SlashCommand? = null,
     val selectedPresetId: String? = null,
     val selectedModelId: String = DefaultModels.first().id,
-)
+) {
+    companion object {
+        /** Keeps a half-typed prompt across rotation / process death. */
+        val Saver: Saver<PromptInputState, Any> = listSaver(
+            save = { state ->
+                listOf(
+                    state.text.text,
+                    state.text.selection.start.toString(),
+                    state.text.selection.end.toString(),
+                    state.activeSlash?.name.orEmpty(),
+                    state.selectedPresetId.orEmpty(),
+                    state.selectedModelId,
+                )
+            },
+            restore = { saved ->
+                PromptInputState(
+                    text = TextFieldValue(
+                        text = saved[0],
+                        selection = TextRange(saved[1].toInt(), saved[2].toInt()),
+                    ),
+                    activeSlash = saved[3].takeIf { it.isNotEmpty() }
+                        ?.let { SlashCommand.valueOf(it) },
+                    selectedPresetId = saved[4].takeIf { it.isNotEmpty() },
+                    selectedModelId = saved[5],
+                )
+            },
+        )
+    }
+}
 
 @Composable
 fun PromptInput(

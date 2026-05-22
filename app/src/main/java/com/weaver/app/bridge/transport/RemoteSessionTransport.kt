@@ -43,6 +43,12 @@ class RemoteSessionTransport(
     private val deviceId: String,
     private val idTokenProvider: suspend () -> String?,
     private val json: Json,
+    /**
+     * Supplies the device Key Attestation header. The server rejects the WS
+     * upgrade outright when it is missing or invalid — this is the baseline
+     * gate that keeps non-app clients off the API.
+     */
+    private val attestationHeader: () -> String? = { null },
 ) : BridgeTransport {
     override val id = "remote"
 
@@ -106,8 +112,9 @@ class RemoteSessionTransport(
                 scheduleReconnect()
                 return@launch
             }
-            val request = Request.Builder().url(endpoint).build()
-            webSocket = client.newWebSocket(request, Listener(token))
+            val builder = Request.Builder().url(endpoint)
+            attestationHeader()?.let { builder.addHeader("X-Weaver-Attestation", it) }
+            webSocket = client.newWebSocket(builder.build(), Listener(token))
         }
     }
 

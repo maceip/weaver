@@ -10,6 +10,21 @@ android {
         version = release(36)
     }
 
+    // Release signing. CI decodes the keystore from a GitHub secret to a file
+    // and exports WEAVER_KEYSTORE_FILE + the passwords; local builds without
+    // those env vars fall through unsigned (fine for debug / CI smoke builds).
+    val keystoreFile = System.getenv("WEAVER_KEYSTORE_FILE")
+    signingConfigs {
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("WEAVER_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("WEAVER_KEY_ALIAS")
+                keyPassword = System.getenv("WEAVER_KEY_PASSWORD")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.weaver.app"
         minSdk = 26
@@ -30,6 +45,8 @@ android {
             // Strip unused resources (drawables, layouts, strings) the
             // shrunk code no longer references.
             isShrinkResources = true
+            // Signed when CI supplied a keystore; otherwise unsigned.
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -47,6 +64,15 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests {
+            // android.util.Log etc. return defaults instead of throwing in
+            // plain JVM unit tests — lets us test logic that logs.
+            isReturnDefaultValues = true
+            // Robolectric needs the merged manifest + resources.
+            isIncludeAndroidResources = true
+        }
     }
 }
 
@@ -88,6 +114,8 @@ dependencies {
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

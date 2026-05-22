@@ -71,3 +71,6 @@ documentation/node_modules/
 documentation/.next/
 documentation/out/
 documentation/.source/
+
+# Review artifacts (wireframes/mockups shared for approval, not source)
+/foldable-wireframes.svg

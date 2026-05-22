@@ -14,6 +14,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.weaver.app.auth.AccountPicker
+import com.weaver.app.auth.AttestationProvider
 import com.weaver.app.auth.AuthController
 import com.weaver.app.bridge.Bridge
 import com.weaver.app.bridge.Preset
@@ -25,6 +26,7 @@ import com.weaver.app.ui.WeaverNavRoot
 import com.weaver.app.ui.theme.WeaverTheme
 import com.weaver.app.webview.WebViewFileChooser
 import com.weaver.app.webview.WebViewHost
+import kotlinx.coroutines.Dispatchers
 
 class MainActivity : ComponentActivity() {
 
@@ -45,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
         val app = application as WeaverApp
 
-        bridge = Bridge(interceptor)
+        bridge = Bridge(interceptor, app.outbox, Dispatchers.Main)
 
         // ── Transport routing ───────────────────────────────────────────────
         // Two backends behind one router with a circuit breaker:
@@ -53,11 +55,13 @@ class MainActivity : ComponentActivity() {
         //  - remote : the AWS session bridge (always authenticated, costs a hop)
         // The router prefers local when it holds a Stitch session, else remote.
         val localTransport = LocalWebViewTransport()
+        val attestationProvider = AttestationProvider()
         val remoteTransport = RemoteSessionTransport(
             endpoint = ServerEndpoints.SESSION_BRIDGE,
             deviceId = app.deviceId,
             idTokenProvider = { app.accountResolver.current()?.idToken },
             json = bridge.json,
+            attestationHeader = attestationProvider::attestationHeader,
         )
         val router = BridgeRouter(localTransport, remoteTransport)
         bridge.bindTransport(router)
@@ -128,6 +132,9 @@ class MainActivity : ComponentActivity() {
                         authController = authController,
                         projectRepository = app.projectRepository,
                         onRequestUpload = fileChooser::requestUpload,
+                        annotationStore = app.annotationStore,
+                        nodeCache = app.nodeCache,
+                        taskTracker = app.taskTracker,
                         bitmapCache = app.bitmapCache,
                         foldObserver = foldObserver,
                     )
@@ -140,6 +147,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         webViewHost.destroy()
+        bridge.dispose()
         super.onDestroy()
     }
 }

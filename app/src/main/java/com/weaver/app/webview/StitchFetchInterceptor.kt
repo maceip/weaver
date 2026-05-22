@@ -58,19 +58,24 @@ internal object StitchFetchInterceptor {
     return s;
   }
 
-  // Parses chunks of the form  <hex-length>\n<json>\n  and returns the
-  // remainder buffer + any completed frames.
+  // Parses Google's wrb.fr framing: a decimal length line, then that many
+  // chars STARTING FROM the length line's terminating \n (so the count
+  // includes that \n). The count is JS-string chars, not UTF-8 bytes.
+  // Skips the blank line after the XSSI guard. Returns the remainder buffer
+  // plus any complete frames. (See server/src/bridge/wrbfr.ts — the tested
+  // reference implementation.)
   function consumeFrames(buf) {
     var frames = [];
     while (true) {
       var nl = buf.indexOf('\n');
       if (nl < 0) break;
-      var sz = parseInt(buf.substring(0, nl), 10);
+      var head = buf.substring(0, nl).trim();
+      if (head === '') { buf = buf.substring(nl + 1); continue; }
+      var sz = parseInt(head, 10);
       if (isNaN(sz)) break;
-      if (buf.length < nl + 1 + sz) break;
-      frames.push(buf.substring(nl + 1, nl + 1 + sz));
-      buf = buf.substring(nl + 1 + sz);
-      if (buf.charAt(0) === '\n') buf = buf.substring(1);
+      if (buf.length < nl + sz) break;
+      frames.push(buf.substring(nl + 1, nl + sz));
+      buf = buf.substring(nl + sz);
     }
     return { buf: buf, frames: frames };
   }
