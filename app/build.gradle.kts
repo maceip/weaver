@@ -70,6 +70,8 @@ android {
             // android.util.Log etc. return defaults instead of throwing in
             // plain JVM unit tests — lets us test logic that logs.
             isReturnDefaultValues = true
+            // Robolectric needs the merged manifest + resources.
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -113,6 +115,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
