@@ -76,6 +76,11 @@ android {
     }
 }
 
+configurations.configureEach {
+    // navigation3-ui:1.0.0-alpha10 expects this exact artifact for LifecycleOwnerKt.
+    resolutionStrategy.force("androidx.lifecycle:lifecycle-runtime-compose:2.10.0-alpha04")
+}
+
 dependencies {
     debugImplementation(project(":dari"))
     releaseImplementation(project(":dari-noop"))
