@@ -112,7 +112,7 @@ sessions; close detaches one device; bad token / inbound-before-hello refused.
 - `:app` builds; 61 unit/E2E tests green. **Crashes on real launch** —
   see `CRASH_GUESS.md` for the ranked diagnosis (top guess: material3 1.4
   vs adaptive-navigation3 alpha ABI skew).
-- `server/` typechecks; 30 tests green (incl. a real attestation chain
+- `server/` typechecks; 52 tests green (incl. a real attestation chain
   verified by the JVM sidecar, gateway session-multiplexing, and the wrb.fr
   parser against the recorded HAR).
 - CI (`Build & Release`): tests + builds debug/release APK, bumps the
