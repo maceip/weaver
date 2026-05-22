@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.weaver.app"
     compileSdk {
-        version = release(36)
+        version = release(37)
     }
 
     // Release signing. CI decodes the keystore from a GitHub secret to a file
@@ -74,11 +74,12 @@ android {
             isIncludeAndroidResources = true
         }
     }
-}
-
-configurations.configureEach {
-    // navigation3-ui:1.0.0-alpha10 expects this exact artifact for LifecycleOwnerKt.
-    resolutionStrategy.force("androidx.lifecycle:lifecycle-runtime-compose:2.10.0-alpha04")
+    lint {
+        // WebViewFileChooser calls registerForActivityResult on a
+        // ComponentActivity — there are no Fragments in this Compose-only app,
+        // so the fragment-version check is a false positive.
+        disable += "InvalidFragmentVersionForActivityResult"
+    }
 }
 
 dependencies {

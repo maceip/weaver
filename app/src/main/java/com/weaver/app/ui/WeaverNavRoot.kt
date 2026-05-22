@@ -161,7 +161,7 @@ fun WeaverNavRoot(
                 backStack.removeLastOrNull()
                 if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
             },
-            sceneStrategy = supportingPaneStrategy,
+            sceneStrategies = listOf(supportingPaneStrategy),
             entryProvider = entryProvider {
                 entry<Login> {
                     LoginScreen(
