@@ -106,25 +106,12 @@ fun WeaverNavRoot(
         }
     }
 
-    // Sync bridge selection into the back stack while inside a project. Focused
-    // designs are PUSHED, never replaced — so clicking design A -> B -> C builds
-    // a real history and predictive back walks C -> B -> A -> overview.
+    // Sync bridge selection into the back stack while inside a project.
     LaunchedEffect(selection) {
-        val top = backStack.lastOrNull()
-        if (top is Login || top is Home || top == null) return@LaunchedEffect
-        val projectId = backStack.currentProjectId() ?: return@LaunchedEffect
-        when {
-            selection.size > 1 && top !is MultiSelect && top !is Focused -> {
-                backStack.add(MultiSelect(projectId))
-            }
-
-            selection.isEmpty() && top is MultiSelect -> {
-                backStack.removeLastOrNull()
-            }
-
-            selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
-                backStack.add(Focused(projectId, selection.first()))
-            }
+        when (val op = reconcileSelection(backStack, selection)) {
+            is NavReconcile.Push -> backStack.add(op.key)
+            NavReconcile.PopTop -> backStack.removeLastOrNull()
+            null -> Unit
         }
     }
 

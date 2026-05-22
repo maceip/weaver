@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.weaver.app.agent.TaskEntry
@@ -115,6 +116,7 @@ private fun Orb(
         Box(
             modifier =
                 Modifier
+                    .testTag("agentOrb")
                     .size(34.dp)
                     .scale(pulse)
                     .clip(CircleShape)

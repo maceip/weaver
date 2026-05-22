@@ -46,3 +46,43 @@ fun List<NavKey>.currentProjectId(): String? =
         is MultiSelect -> top.projectId
         else -> null
     }
+
+/** How the back stack should react to a change in Stitch's selection. */
+sealed interface NavReconcile {
+    data class Push(
+        val key: NavKey,
+    ) : NavReconcile
+
+    data object PopTop : NavReconcile
+}
+
+/**
+ * Pure reconciliation of Stitch's selection against the back stack. Focused
+ * designs are PUSHED, never replaced — clicking design A → B → C builds real
+ * history so predictive back walks C → B → A → overview.
+ */
+fun reconcileSelection(
+    backStack: List<NavKey>,
+    selection: List<String>,
+): NavReconcile? {
+    val top = backStack.lastOrNull()
+    if (top is Login || top is Home || top == null) return null
+    val projectId = backStack.currentProjectId() ?: return null
+    return when {
+        selection.size > 1 && top !is MultiSelect && top !is Focused -> {
+            NavReconcile.Push(MultiSelect(projectId))
+        }
+
+        selection.isEmpty() && top is MultiSelect -> {
+            NavReconcile.PopTop
+        }
+
+        selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
+            NavReconcile.Push(Focused(projectId, selection.first()))
+        }
+
+        else -> {
+            null
+        }
+    }
+}
