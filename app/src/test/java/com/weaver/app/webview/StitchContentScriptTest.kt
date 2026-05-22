@@ -19,6 +19,18 @@ class StitchContentScriptTest {
     }
 
     @Test
+    fun handlesAttachByClickingTheStandardFileInput() {
+        assertTrue(source.contains("case 'attach'"))
+        assertTrue(source.contains("input[type=\"file\"]"))
+    }
+
+    @Test
+    fun emitsDiagnosticsWhenAttachControlIsMissing() {
+        assertTrue(source.contains("attach_control_missing"))
+        assertTrue(source.contains("attach_input_missing"))
+    }
+
+    @Test
     fun exportLabelMapCoversEveryExportKind() {
         for (kind in ExportKind.entries) {
             assertTrue("no Stitch menu label wired for ${kind.name}", source.contains(kind.name + ":["))
