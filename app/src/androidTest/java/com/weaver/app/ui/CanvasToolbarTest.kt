@@ -1,7 +1,6 @@
 package com.weaver.app.ui
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -68,6 +67,7 @@ class CanvasToolbarTest {
                 )
             }
         }
+        composeRule.onNodeWithText("DESIGN.md").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Export").assertDoesNotExist()
     }
 }

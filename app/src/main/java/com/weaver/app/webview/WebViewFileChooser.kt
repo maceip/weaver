@@ -151,7 +151,7 @@ internal fun chooserTarget(accepts: List<String>): ChooserTarget {
     }
 }
 
-/** SAF filters on MIME types only; drop bare extensions and fall back to `*/*`. */
+// SAF filters on MIME types only; drop bare extensions and fall back to all types.
 internal fun mimeFilter(accepts: List<String>): Array<String> {
     val mimes = accepts.filter { it.isNotBlank() && "/" in it }
     return if (mimes.isEmpty()) arrayOf("*/*") else mimes.toTypedArray()
