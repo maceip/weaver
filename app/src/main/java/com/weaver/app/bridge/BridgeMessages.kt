@@ -34,6 +34,14 @@ enum class SlashCommand { Image, Logo, Diagram, Animate }
 
 enum class AttachmentKind { UploadFile, WebsiteUrl, Variations }
 
+/** A file picked natively, carried to the WebView as base64 for upload. */
+@Serializable
+data class AttachedFile(
+    val name: String,
+    val mime: String,
+    val data: String,
+)
+
 enum class CanvasTool {
     Cursor, Marquee, Edit, Hand, InsertImage, Palette, Favorite
 }
@@ -177,6 +185,10 @@ sealed interface Inbound {
         val kind: AttachmentKind,
         val payload: String? = null,
     ) : Inbound
+
+    @Serializable
+    @SerialName("attach_files")
+    data class AttachFiles(val files: List<AttachedFile>) : Inbound
 
     @Serializable
     @SerialName("select_preset")

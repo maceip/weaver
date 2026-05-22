@@ -69,7 +69,8 @@ class MainActivity : ComponentActivity() {
         webViewHost = WebViewHost(this, bridge, localTransport)
         // Register the native file pickers now — registerForActivityResult must
         // run before the Activity is STARTED.
-        webViewHost.fileChooser = WebViewFileChooser(this)
+        val fileChooser = WebViewFileChooser(this, bridge)
+        webViewHost.fileChooser = fileChooser
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
             // is on top. The repository ignores the call if no draft is current.
@@ -126,6 +127,7 @@ class MainActivity : ComponentActivity() {
                         presets = builtinPresets,
                         authController = authController,
                         projectRepository = app.projectRepository,
+                        onRequestUpload = fileChooser::requestUpload,
                         bitmapCache = app.bitmapCache,
                         foldObserver = foldObserver,
                     )

@@ -51,6 +51,17 @@ class ExportSerializationTest {
     }
 
     @Test
+    fun attachFiles_roundTrips() {
+        val original: Inbound = Inbound.AttachFiles(
+            listOf(AttachedFile(name = "mockup.png", mime = "image/png", data = "QUJDRA==")),
+        )
+        val encoded = json.encodeToString(Inbound.serializer(), original)
+        val decoded = json.decodeFromString(Inbound.serializer(), encoded)
+        assertEquals(original, decoded)
+        assertTrue(encoded, encoded.contains("\"type\":\"attach_files\""))
+    }
+
+    @Test
     fun exportComplete_roundTrips() {
         val payload: JsonObject = buildJsonObject { put("url", "https://example.test/app.zip") }
         val original: Outbound = Outbound.ExportComplete(kind = ExportKind.Zip, payload = payload)

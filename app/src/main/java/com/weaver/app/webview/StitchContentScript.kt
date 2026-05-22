@@ -92,20 +92,19 @@ internal object StitchContentScript {
         append("case 'clear_selection':{var bg=document.querySelector('").append(DESELECT_PANE_SELECTOR).append("')||document.querySelector('.react-flow__pane');if(bg){bg.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:1,clientY:1}));bg.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,clientX:1,clientY:1}));bg.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:1,clientY:1}));}break;}")
         append("case 'viewport_changed':{window.dispatchEvent(new Event('resize'));break;}")
         append("case 'synthesize_input':{var e=m.event||{};var t=e.target?document.querySelector(e.target):document.activeElement;if(!t)return;if(e.event==='click')t.click();else if(e.event==='keydown')t.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,bubbles:true}));break;}")
-        // Upload: click the standard <input type=file> directly. That element
-        // is a web standard, so it's far more durable than Stitch's attach
-        // button/menu DOM; clicking it fires the native onShowFileChooser,
-        // which drives the Android photo picker / SAF. The attach-button path
-        // is only a fallback for when Stitch hasn't mounted the input yet.
-        append("case 'attach':{")
-        append("if(m.kind&&m.kind!=='UploadFile')break;")
-        append("var fi=document.querySelector('input[type=\"file\"]');if(fi){fi.click();break;}")
-        append("var sym=null,syms=document.querySelectorAll('span.material-symbols-outlined,span.material-icons');")
-        append("for(var ai=0;ai<syms.length;ai++){if((syms[ai].textContent||'').trim()==='attach_file'){sym=syms[ai];break;}}")
-        append("if(!sym){emit('error',{code:'attach_control_missing',message:'no file input or attach button found'});break;}")
-        append("var ab=sym.closest('button,[role=\"button\"]')||sym.parentElement;if(ab)ab.click();")
-        append("var aw=0;(function attachWait(){var f=document.querySelector('input[type=\"file\"]');if(f){f.click();return;}")
-        append("if(aw++<25){setTimeout(attachWait,100);}else{emit('error',{code:'attach_input_missing',message:'file input never appeared after attach'});}})();")
+        // Upload: receive file bytes the native picker collected and inject
+        // them into Stitch's <input type=file> via a DataTransfer. A headless
+        // WebView can't satisfy Chromium's user-activation gate for a scripted
+        // file-input click, so the picker runs natively and only bytes cross
+        // the bridge. Stitch's own change-listener then uploads them.
+        append("case 'attach_files':{")
+        append("var inp=document.querySelector('input[type=\"file\"]');")
+        append("if(!inp){emit('error',{code:'attach_input_missing',message:'no file input to receive upload'});break;}")
+        append("var list=m.files||[],dt=new DataTransfer();")
+        append("for(var fx=0;fx<list.length;fx++){var fe=list[fx];var bin=atob(fe.data);var arr=new Uint8Array(bin.length);for(var bx=0;bx<bin.length;bx++){arr[bx]=bin.charCodeAt(bx);}dt.items.add(new File([arr],fe.name,{type:fe.mime}));}")
+        append("inp.files=dt.files;")
+        append("inp.dispatchEvent(new Event('input',{bubbles:true}));")
+        append("inp.dispatchEvent(new Event('change',{bubbles:true}));")
         append("break;}")
         // Drive Stitch's Export menu: open it, then click the menu item whose
         // text matches the requested kind. Figma/Download sit in the top menu;

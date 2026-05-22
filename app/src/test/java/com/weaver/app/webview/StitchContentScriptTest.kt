@@ -19,14 +19,14 @@ class StitchContentScriptTest {
     }
 
     @Test
-    fun handlesAttachByClickingTheStandardFileInput() {
-        assertTrue(source.contains("case 'attach'"))
+    fun handlesAttachFilesByInjectingIntoTheFileInput() {
+        assertTrue(source.contains("case 'attach_files'"))
+        assertTrue(source.contains("new DataTransfer()"))
         assertTrue(source.contains("input[type=\"file\"]"))
     }
 
     @Test
-    fun emitsDiagnosticsWhenAttachControlIsMissing() {
-        assertTrue(source.contains("attach_control_missing"))
+    fun emitsDiagnosticWhenNoFileInputToReceiveUpload() {
         assertTrue(source.contains("attach_input_missing"))
     }
 

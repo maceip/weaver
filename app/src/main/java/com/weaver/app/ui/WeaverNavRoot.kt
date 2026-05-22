@@ -50,6 +50,7 @@ fun WeaverNavRoot(
     presets: List<Preset>,
     authController: AuthController,
     projectRepository: ProjectRepository,
+    onRequestUpload: () -> Unit,
     bitmapCache: BitmapCache? = null,
     foldObserver: FoldObserver? = null,
 ) {
@@ -213,6 +214,7 @@ fun WeaverNavRoot(
                 state = promptState,
                 onStateChange = { promptState = it },
                 scopeId = (backStack.lastOrNull() as? Focused)?.nodeId,
+                onRequestUpload = onRequestUpload,
             )
         }
     }
@@ -336,6 +338,7 @@ private fun PromptDock(
     state: PromptInputState,
     onStateChange: (PromptInputState) -> Unit,
     scopeId: String?,
+    onRequestUpload: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -362,9 +365,12 @@ private fun PromptDock(
                 onStateChange(state.copy(text = TextFieldValue("")))
             },
             onAttach = { kind ->
-                bridge.send(Inbound.Attach(kind))
-                if (kind == AttachmentKind.WebsiteUrl) {
-                    // TODO: surface URL entry dialog
+                when (kind) {
+                    // Upload runs natively: a headless WebView can't satisfy
+                    // Chromium's user-activation gate for a scripted file-input
+                    // click, so the picker is launched from here instead.
+                    AttachmentKind.UploadFile -> onRequestUpload()
+                    else -> bridge.send(Inbound.Attach(kind))
                 }
             },
             onVoice = {
