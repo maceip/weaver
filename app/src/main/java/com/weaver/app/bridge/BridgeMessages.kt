@@ -215,4 +215,50 @@ sealed interface Inbound {
     @Serializable
     @SerialName("select_tool")
     data class SelectTool(val tool: CanvasTool) : Inbound
+
+    @Serializable
+    @SerialName("toggle_favorite")
+    data class ToggleFavorite(val nodeId: String) : Inbound
+
+    @Serializable
+    @SerialName("add_note")
+    data class AddNote(val targetId: String, val text: String) : Inbound
 }
+
+/**
+ * Actions worth buffering offline and replaying on reconnect — durable
+ * mutations. Transient UI state (selection, tool, viewport) is excluded:
+ * replaying it stale would fight whatever the user is doing on reconnect.
+ */
+val Inbound.isBufferable: Boolean
+    get() = when (this) {
+        is Inbound.SubmitPrompt,
+        is Inbound.Canvas,
+        is Inbound.Attach,
+        is Inbound.RequestExport,
+        is Inbound.ToggleFavorite,
+        is Inbound.AddNote,
+        -> true
+
+        is Inbound.SelectNode,
+        is Inbound.SelectPreset,
+        is Inbound.SelectModel,
+        is Inbound.VoiceInput,
+        is Inbound.SynthesizeInput,
+        is Inbound.ClearSelection,
+        is Inbound.SelectTool,
+        is Inbound.ViewportChanged,
+        -> false
+    }
+
+/** Short human label for a buffered action, shown in the outbox / orb. */
+val Inbound.outboxLabel: String
+    get() = when (this) {
+        is Inbound.SubmitPrompt -> text.take(60).ifBlank { "Prompt" }
+        is Inbound.Canvas -> action.name
+        is Inbound.Attach -> "Attach ${kind.name}"
+        is Inbound.RequestExport -> "Export ${kind.name}"
+        is Inbound.ToggleFavorite -> "Favorite"
+        is Inbound.AddNote -> "Note: ${text.take(40)}"
+        else -> this::class.simpleName ?: "Action"
+    }
