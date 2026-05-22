@@ -30,11 +30,18 @@ internal class CircuitBreaker(
         when (status) {
             TransportStatus.Ready -> {
                 consecutiveFailures = 0
-                state = State.Closed
+                // A Ready closes the breaker only from HalfOpen (a successful
+                // probe) or keeps it Closed. It must NOT close an Open breaker
+                // — that would let a flapping transport un-bench itself the
+                // instant it blips Ready. Open stays Open until the cooldown
+                // elapses (see usable()).
+                if (state == State.HalfOpen) state = State.Closed
             }
             TransportStatus.Failed -> {
                 consecutiveFailures += 1
-                if (consecutiveFailures >= failureThreshold) {
+                // A failed probe re-opens immediately; otherwise trip on the
+                // consecutive-failure threshold.
+                if (state == State.HalfOpen || consecutiveFailures >= failureThreshold) {
                     state = State.Open
                     openedAt = now
                 }

@@ -4,8 +4,8 @@ import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,12 +22,14 @@ private const val TAG = "WeaverRouter"
  * wiring: collect both backends' status, recompute, forward.
  */
 class BridgeRouter(
-    private val local: LocalWebViewTransport,
-    private val remote: RemoteSessionTransport,
+    private val local: BridgeTransport,
+    private val remote: BridgeTransport,
     failureThreshold: Int = 3,
     cooldownMs: Long = 20_000L,
     /** Injectable for tests; defaults to the monotonic system clock. */
     private val now: () -> Long = { SystemClock.elapsedRealtime() },
+    /** Injectable for tests; defaults to a fresh Default-dispatcher scope. */
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : BridgeTransport {
     override val id = "router"
 
@@ -41,7 +43,7 @@ class BridgeRouter(
     private val localBreaker = CircuitBreaker(failureThreshold, cooldownMs)
     private val remoteBreaker = CircuitBreaker(failureThreshold, cooldownMs)
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val collectors = mutableListOf<Job>()
 
     override fun setOutboundSink(sink: (String) -> Unit) {
         // Either backend may produce outbound; both feed the same Bridge sink.
@@ -52,13 +54,13 @@ class BridgeRouter(
     override fun start() {
         local.start()
         remote.start()
-        scope.launch {
+        collectors += scope.launch {
             local.status.collect { s ->
                 localBreaker.onStatus(s, now())
                 recompute()
             }
         }
-        scope.launch {
+        collectors += scope.launch {
             remote.status.collect { s ->
                 remoteBreaker.onStatus(s, now())
                 recompute()
@@ -69,7 +71,10 @@ class BridgeRouter(
     override fun stop() {
         local.stop()
         remote.stop()
-        scope.cancel()
+        // Cancel only our own collectors — the scope may be owned by a caller
+        // (or a test) and must not be torn down here.
+        collectors.forEach { it.cancel() }
+        collectors.clear()
         _status.value = TransportStatus.Idle
     }
 
