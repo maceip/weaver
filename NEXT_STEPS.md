@@ -70,41 +70,40 @@ for local server dev.
 
 ---
 
-## Open task 1 — JVM attestation sidecar (replace the TS port)
+## Open task 1 — JVM attestation sidecar — DONE
 
-`server/src/attestation/verifier.ts` is a focused Node port of
-`github.com/android/keyattestation`. The full library is Kotlin/JVM and
-should be **run, not reimplemented** — it ships a `VerifierCli` entry point.
+The Node port of `github.com/android/keyattestation` is replaced by Google's
+real Kotlin/JVM library, vendored and run as a sidecar.
 
-Plan:
-1. Add a `server/attestation-jvm/` Gradle module that depends on
-   `com.android.keyattestation` (or vendors the cloned source) and builds a
-   fat jar exposing `VerifierCli`.
-2. In `server/Dockerfile`, add a JRE (the Playwright base image is Ubuntu —
-   `apt-get install -y openjdk-21-jre-headless`) and copy the jar in.
-3. Replace `verifyAttestation()`'s body with a subprocess call to the jar
-   (`java -jar verifier.jar <pemfile>`), parse its result. Keep the same
-   `AttestationResult` interface so `index.ts` / tests don't change.
-4. `attestation.test.ts` already exercises a real chain — it should pass
-   unchanged against the sidecar, proving parity.
+- `server/attestation-jvm/` — Gradle module vendoring the keyattestation
+  source (`src/main/kotlin/com/android/...`, Apache-2.0) plus a thin
+  `com.weaver.attestation.Sidecar` CLI that emits one line of JSON. The
+  `com.gradleup.shadow` plugin builds `weaver-attestation-verifier.jar`.
+- `server/Dockerfile` is now multi-stage: an `eclipse-temurin:21-jdk` stage
+  builds the jar; the runtime stage adds `openjdk-21-jre-headless`, copies
+  the jar to `/app/attestation-verifier.jar`, and sets
+  `WEAVER_ATTESTATION_JAR`.
+- `verifyAttestation()` keeps the cheap input checks (parse, length,
+  validity window → `cert_expired`) and the package/digest/challenge policy,
+  but delegates the cryptographic chain validation + identity extraction to
+  the sidecar. Same `AttestationResult` interface — `index.ts` unchanged.
+- `attestation.test.ts` passes unchanged against the sidecar (8/8). `npm
+  test`'s `pretest` builds the jar via the gradle wrapper if absent;
+  `npm run build:attestation` builds it explicitly.
 
-Cost: ~50 MB JRE in the image, one subprocess per WS upgrade (ms-scale).
+Cost: JRE in the image, one ~350 ms JVM subprocess per WS upgrade.
 Win: Google's real verification — revocation, full constraints, future
 format changes — with zero drift.
 
-## Open task 2 — server session-multiplexing test
+## Open task 2 — server session-multiplexing test — DONE
 
-`BridgeRouterE2eTest` covers the *client* side of scenarios 5 & 6. The
-*server* side (two sockets with the same Google `sub` share one
-`StitchSession`; different `sub` → isolated) is untested because
-`BridgeGateway` needs a real Chromium via `ContextManager`.
-
-Plan: extract a `SessionProvider` interface (`sessionFor(identity)`) that
-`ContextManager` implements, and an interface from `StitchSession` for the
-methods the gateway uses (`attachDevice`/`detachDevice`/`deviceCount`/
-`sessionId`/`onOutbound`/`sendInbound`). Then a `gateway.test.ts` with fakes
-asserts: two `hello`s with the same identity → one session, outbound
-broadcasts to both sockets; different identity → isolated session.
+`BridgeGateway` now depends on the extracted `SessionProvider` /
+`BridgeSession` interfaces (`server/src/bridge/sessionTypes.ts`) instead of
+the concrete `ContextManager` / `StitchSession`. `server/test/gateway.test.ts`
+(7 tests, fake socket + provider) covers the server side of scenarios 5 & 6:
+two `hello`s with the same Google `sub` → one shared session, outbound
+broadcasts to every device, inbound merges; different `sub` → isolated
+sessions; close detaches one device; bad token / inbound-before-hello refused.
 
 ---
 
@@ -113,8 +112,9 @@ broadcasts to both sockets; different identity → isolated session.
 - `:app` builds; 61 unit/E2E tests green. **Crashes on real launch** —
   see `CRASH_GUESS.md` for the ranked diagnosis (top guess: material3 1.4
   vs adaptive-navigation3 alpha ABI skew).
-- `server/` typechecks; 23 tests green (incl. a real attestation chain and
-  the wrb.fr parser against the recorded HAR).
+- `server/` typechecks; 30 tests green (incl. a real attestation chain
+  verified by the JVM sidecar, gateway session-multiplexing, and the wrb.fr
+  parser against the recorded HAR).
 - CI (`Build & Release`): tests + builds debug/release APK, bumps the
   version tag, cuts a GitHub release with build-provenance attestation.
 - Architecture: hidden WebView + native Compose, bridge over a router that
