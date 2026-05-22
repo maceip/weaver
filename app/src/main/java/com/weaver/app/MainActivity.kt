@@ -1,5 +1,7 @@
 package com.weaver.app
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -7,6 +9,7 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.IntentCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private val interceptor: DariInterceptor? = Dari.createInterceptor(tag = "Stitch")
     private lateinit var bridge: Bridge
     private lateinit var webViewHost: WebViewHost
+    private lateinit var fileChooser: WebViewFileChooser
     private lateinit var foldObserver: FoldObserver
     private lateinit var authController: AuthController
 
@@ -73,7 +77,7 @@ class MainActivity : ComponentActivity() {
         webViewHost = WebViewHost(this, bridge, localTransport)
         // Register the native file pickers now — registerForActivityResult must
         // run before the Activity is STARTED.
-        val fileChooser = WebViewFileChooser(this, bridge)
+        fileChooser = WebViewFileChooser(this, bridge)
         webViewHost.fileChooser = fileChooser
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
@@ -143,6 +147,34 @@ class MainActivity : ComponentActivity() {
         }
 
         foldObserver.observe(this)
+
+        // A file shared into Weaver on cold start.
+        handleShareIntent(intent)
+    }
+
+    /** A file shared into Weaver while it was already running. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    /**
+     * Files shared from other apps (`ACTION_SEND` / `ACTION_SEND_MULTIPLE`) are
+     * read and injected into the open Stitch project as an upload — the same
+     * path as the in-app "Upload Files" picker. Buffered if Stitch isn't ready.
+     */
+    private fun handleShareIntent(intent: Intent) {
+        val uris: List<Uri> = when (intent.action) {
+            Intent.ACTION_SEND ->
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    ?.let(::listOf).orEmpty()
+            Intent.ACTION_SEND_MULTIPLE ->
+                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    .orEmpty()
+            else -> emptyList()
+        }
+        if (uris.isNotEmpty()) fileChooser.ingestUris(uris)
     }
 
     override fun onDestroy() {

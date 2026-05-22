@@ -26,12 +26,26 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:configChanges="screenSize|screenLayout|orientation|smallestScreenSize|keyboardHidden|density|uiMode"
             android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Weaver">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Share target: accept any file (or text) shared from another app
+                 so it can be uploaded straight into the open Stitch project. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
 

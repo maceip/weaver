@@ -58,7 +58,7 @@ class WebViewFileChooser(
 
     private val uploadLauncher = activity.registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris -> onUploadPicked(uris) }
+    ) { uris -> ingestUris(uris) }
 
     /** Native-initiated upload — launch the system picker, inject what it returns. */
     fun requestUpload() {
@@ -94,7 +94,12 @@ class WebViewFileChooser(
         callback.onReceiveValue(picked.toTypedArray().takeIf { it.isNotEmpty() })
     }
 
-    private fun onUploadPicked(uris: List<Uri>) {
+    /**
+     * Read [uris] and inject their bytes into Stitch's upload input over the
+     * bridge. Drives both the native picker and files shared into Weaver from
+     * other apps via an `ACTION_SEND` intent.
+     */
+    fun ingestUris(uris: List<Uri>) {
         if (uris.isEmpty()) return
         ioScope.launch {
             val files = uris.mapNotNull { readFile(it) }
