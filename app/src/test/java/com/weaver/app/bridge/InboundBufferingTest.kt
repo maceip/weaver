@@ -7,7 +7,6 @@ import org.junit.Test
 
 /** Verifies which actions the offline outbox buffers, and their labels. */
 class InboundBufferingTest {
-
     @Test
     fun durableMutationsAreBuffered() {
         assertTrue(Inbound.SubmitPrompt(text = "make it blue").isBufferable)

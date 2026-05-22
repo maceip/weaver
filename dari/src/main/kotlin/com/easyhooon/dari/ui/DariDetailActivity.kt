@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,16 +22,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -39,20 +40,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.MessageDirection
 import com.easyhooon.dari.MessageEntry
 import com.easyhooon.dari.export.DariExporter
 import com.easyhooon.dari.export.ExportFormat
 import com.easyhooon.dari.ui.components.JsonViewer
-import androidx.compose.foundation.isSystemInDarkTheme
 import com.easyhooon.dari.ui.theme.ApplyDariSystemBars
 import com.easyhooon.dari.ui.theme.DariTheme
 import com.easyhooon.dari.ui.theme.DariTopBarColors
@@ -67,22 +67,26 @@ import java.util.Locale
  * Chucker-style OVERVIEW / REQUEST / RESPONSE tab layout.
  */
 class DariDetailActivity : ComponentActivity() {
-
     // Entry captured at launch time, consumed in the SAF callback.
     // Two launchers are registered (one per format) so document providers
     // receive the correct MIME type hint — CreateDocument fixes the type at
     // registration, not per-launch.
     private var pendingSaveEntry: MessageEntry? = null
 
-    private val saveTextDocumentLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.TEXT)),
-    ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.TEXT) }
+    private val saveTextDocumentLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.TEXT)),
+        ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.TEXT) }
 
-    private val saveJsonDocumentLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.JSON)),
-    ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.JSON) }
+    private val saveJsonDocumentLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.JSON)),
+        ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.JSON) }
 
-    private fun handleSaveResult(uri: Uri?, format: ExportFormat) {
+    private fun handleSaveResult(
+        uri: Uri?,
+        format: ExportFormat,
+    ) {
         val entry = pendingSaveEntry
         pendingSaveEntry = null
         if (uri == null || entry == null) return
@@ -91,12 +95,16 @@ class DariDetailActivity : ComponentActivity() {
         }
     }
 
-    private fun launchSave(entry: MessageEntry, format: ExportFormat) {
+    private fun launchSave(
+        entry: MessageEntry,
+        format: ExportFormat,
+    ) {
         pendingSaveEntry = entry
-        val launcher = when (format) {
-            ExportFormat.TEXT -> saveTextDocumentLauncher
-            ExportFormat.JSON -> saveJsonDocumentLauncher
-        }
+        val launcher =
+            when (format) {
+                ExportFormat.TEXT -> saveTextDocumentLauncher
+                ExportFormat.JSON -> saveJsonDocumentLauncher
+            }
         launcher.launch(DariExporter.suggestedFilename(format))
     }
 
@@ -187,9 +195,10 @@ class DariDetailActivity : ComponentActivity() {
                     },
                 ) { padding ->
                     Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(padding),
                     ) {
                         if (entry == null) {
                             Text("Message not found", modifier = Modifier.padding(16.dp))
@@ -197,7 +206,6 @@ class DariDetailActivity : ComponentActivity() {
                             DetailTabs(entry)
                         }
                     }
-
                 }
             }
         }
@@ -218,10 +226,11 @@ private fun DetailTabs(entry: MessageEntry) {
             contentColor = MaterialTheme.colorScheme.onPrimary,
             indicator = {
                 TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(
-                        selectedTabIndex = pagerState.currentPage,
-                        matchContentSize = false,
-                    ),
+                    modifier =
+                        Modifier.tabIndicatorOffset(
+                            selectedTabIndex = pagerState.currentPage,
+                            matchContentSize = false,
+                        ),
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             },
@@ -233,11 +242,12 @@ private fun DetailTabs(entry: MessageEntry) {
                     text = {
                         Text(
                             text = title,
-                            color = if (pagerState.currentPage == index) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-                            },
+                            color =
+                                if (pagerState.currentPage == index) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                                },
                         )
                     },
                 )
@@ -263,15 +273,17 @@ private fun OverviewTab(entry: MessageEntry) {
     val responseSize = entry.responseData?.toByteArray(Charsets.UTF_8)?.size ?: 0
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
     ) {
-        val direction = when (entry.direction) {
-            MessageDirection.WEB_TO_APP -> "Web \u2192 App"
-            MessageDirection.APP_TO_WEB -> "App \u2192 Web"
-        }
+        val direction =
+            when (entry.direction) {
+                MessageDirection.WEB_TO_APP -> "Web \u2192 App"
+                MessageDirection.APP_TO_WEB -> "App \u2192 Web"
+            }
 
         OverviewRow("Handler", entry.handlerName)
         OverviewRow("Direction", direction)
@@ -298,11 +310,15 @@ private fun OverviewTab(entry: MessageEntry) {
 }
 
 @Composable
-private fun OverviewRow(label: String, value: String) {
+private fun OverviewRow(
+    label: String,
+    value: String,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
     ) {
         Text(
             text = label,
@@ -321,10 +337,11 @@ private fun OverviewRow(label: String, value: String) {
 @Composable
 private fun DataTab(data: String?) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
     ) {
         if (data.isNullOrBlank()) {
             Text(
@@ -349,8 +366,9 @@ private fun formatTimestamp(epochMillis: Long): String =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()),
     )
 
-private fun formatSize(bytes: Int): String = when {
-    bytes < 1024 -> "$bytes B"
-    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
-    else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
-}
+private fun formatSize(bytes: Int): String =
+    when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
+        else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
+    }

@@ -26,23 +26,33 @@ data class OutboxEntry(
  * (offline, or logged out). Survives process death. [com.weaver.app.bridge.Bridge]
  * drains it the moment a transport reports Ready.
  */
-class Outbox(context: Context) {
+class Outbox(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private val _entries = MutableStateFlow(load())
     val entries: StateFlow<List<OutboxEntry>> = _entries.asStateFlow()
 
     val pendingCount: Int get() = _entries.value.size
 
-    fun enqueue(label: String, payload: String): OutboxEntry {
-        val entry = OutboxEntry(
-            id = UUID.randomUUID().toString(),
-            label = label,
-            payload = payload,
-            queuedAt = System.currentTimeMillis(),
-        )
+    fun enqueue(
+        label: String,
+        payload: String,
+    ): OutboxEntry {
+        val entry =
+            OutboxEntry(
+                id = UUID.randomUUID().toString(),
+                label = label,
+                payload = payload,
+                queuedAt = System.currentTimeMillis(),
+            )
         _entries.update { it + entry }
         persist()
         return entry

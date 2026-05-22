@@ -7,101 +7,109 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MessageEntryTest {
-
     @Test
     fun `durationMs returns difference between response and request timestamps`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestTimestamp = 1000L,
-            responseTimestamp = 1500L,
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestTimestamp = 1000L,
+                responseTimestamp = 1500L,
+            )
         assertEquals(500L, entry.durationMs)
     }
 
     @Test
     fun `durationMs returns null when responseTimestamp is null`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestTimestamp = 1000L,
-            responseTimestamp = null,
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestTimestamp = 1000L,
+                responseTimestamp = null,
+            )
         assertNull(entry.durationMs)
     }
 
     @Test
     fun `totalSizeBytes sums request and response data sizes`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = "hello",
-            responseData = "world!",
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = "hello",
+                responseData = "world!",
+            )
         assertEquals(11, entry.totalSizeBytes)
     }
 
     @Test
     fun `totalSizeBytes returns zero when both data are null`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+            )
         assertEquals(0, entry.totalSizeBytes)
     }
 
     @Test
     fun `totalSizeBytes handles multibyte characters`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = "다리",
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = "다리",
+            )
         // Korean characters are 3 bytes each in UTF-8
         assertEquals(6, entry.totalSizeBytes)
     }
 
     @Test
     fun `default status is IN_PROGRESS`() {
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+            )
         assertEquals(MessageStatus.IN_PROGRESS, entry.status)
     }
 
     @Test
     fun `tag defaults to null`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+            )
         assertNull(entry.tag)
     }
 
     @Test
     fun `tag is preserved when set`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            tag = "PaymentWebView",
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                tag = "PaymentWebView",
+            )
         assertEquals("PaymentWebView", entry.tag)
     }
 
     @Test
     fun `tag is preserved through copy`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            tag = "MainWebView",
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                tag = "MainWebView",
+            )
         val updated = entry.copy(status = MessageStatus.SUCCESS)
         assertEquals("MainWebView", updated.tag)
         assertEquals(MessageStatus.SUCCESS, updated.status)
@@ -140,39 +148,42 @@ class MessageEntryTest {
 
     @Test
     fun `truncation flags default to false`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+            )
         assertFalse(entry.requestDataTruncated)
         assertFalse(entry.responseDataTruncated)
     }
 
     @Test
     fun `truncation flags default to false in secondary constructor`() {
-        val entry = MessageEntry(
-            id = 1L,
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = "req",
-            responseData = "res",
-            status = MessageStatus.SUCCESS,
-            requestTimestamp = 1000L,
-            responseTimestamp = 2000L,
-        )
+        val entry =
+            MessageEntry(
+                id = 1L,
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = "req",
+                responseData = "res",
+                status = MessageStatus.SUCCESS,
+                requestTimestamp = 1000L,
+                responseTimestamp = 2000L,
+            )
         assertFalse(entry.requestDataTruncated)
         assertFalse(entry.responseDataTruncated)
     }
 
     @Test
     fun `truncation flags are preserved through copy`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestDataTruncated = true,
-            responseDataTruncated = true,
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestDataTruncated = true,
+                responseDataTruncated = true,
+            )
         val updated = entry.copy(status = MessageStatus.SUCCESS)
         assertTrue(updated.requestDataTruncated)
         assertTrue(updated.responseDataTruncated)
@@ -198,39 +209,42 @@ class MessageEntryTest {
 
     @Test
     fun `totalSizeBytes when only requestData is present`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = "hello",
-            responseData = null,
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = "hello",
+                responseData = null,
+            )
         assertEquals(5, entry.totalSizeBytes)
     }
 
     @Test
     fun `totalSizeBytes when only responseData is present`() {
-        val entry = MessageEntry(
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = null,
-            responseData = "world!",
-        )
+        val entry =
+            MessageEntry(
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = null,
+                responseData = "world!",
+            )
         assertEquals(6, entry.totalSizeBytes)
     }
 
     @Test
     fun `secondary constructor maps all fields correctly with tag as null`() {
-        val entry = MessageEntry(
-            id = 42L,
-            requestId = "req-1",
-            handlerName = "getAppInfo",
-            direction = MessageDirection.APP_TO_WEB,
-            requestData = "req",
-            responseData = "res",
-            status = MessageStatus.SUCCESS,
-            requestTimestamp = 1000L,
-            responseTimestamp = 2000L,
-        )
+        val entry =
+            MessageEntry(
+                id = 42L,
+                requestId = "req-1",
+                handlerName = "getAppInfo",
+                direction = MessageDirection.APP_TO_WEB,
+                requestData = "req",
+                responseData = "res",
+                status = MessageStatus.SUCCESS,
+                requestTimestamp = 1000L,
+                responseTimestamp = 2000L,
+            )
         assertEquals(42L, entry.id)
         assertEquals("req-1", entry.requestId)
         assertEquals("getAppInfo", entry.handlerName)
@@ -245,12 +259,13 @@ class MessageEntryTest {
 
     @Test
     fun `fire-and-forget entry has null requestId`() {
-        val entry = MessageEntry(
-            requestId = null,
-            handlerName = "logEvent",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = """{"event":"click"}""",
-        )
+        val entry =
+            MessageEntry(
+                requestId = null,
+                handlerName = "logEvent",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = """{"event":"click"}""",
+            )
         assertNull(entry.requestId)
         assertNull(entry.durationMs)
         assertEquals(MessageStatus.IN_PROGRESS, entry.status)

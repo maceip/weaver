@@ -90,16 +90,18 @@ fun OverviewCanvas(
             }
     }
 
-    val pageSize = remember(pagesPerView) {
-        if (pagesPerView <= 1) PageSize.Fill else FractionalPageSize(pagesPerView)
-    }
+    val pageSize =
+        remember(pagesPerView) {
+            if (pagesPerView <= 1) PageSize.Fill else FractionalPageSize(pagesPerView)
+        }
 
     Column(modifier = modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
             pageSpacing = 12.dp,
             pageSize = pageSize,
             contentPadding = PaddingValues(horizontal = if (pagesPerView <= 1) 32.dp else 16.dp),
@@ -120,38 +122,50 @@ fun OverviewCanvas(
     }
 }
 
-private class FractionalPageSize(private val pages: Int) : PageSize {
-    override fun Density.calculateMainAxisPageSize(availableSpace: Int, pageSpacing: Int): Int {
+private class FractionalPageSize(
+    private val pages: Int,
+) : PageSize {
+    override fun Density.calculateMainAxisPageSize(
+        availableSpace: Int,
+        pageSpacing: Int,
+    ): Int {
         val total = availableSpace - pageSpacing * (pages - 1)
         return total / pages
     }
 }
 
 @Composable
-private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?, onTap: () -> Unit = {}) {
+private fun DesignTile(
+    node: StitchNode,
+    bitmapCache: BitmapCache?,
+    onTap: () -> Unit = {},
+) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.thumb) {
         val thumb = node.thumb
-        value = if (thumb == null || bitmapCache == null) {
-            null
-        } else {
-            withContext(Dispatchers.IO) { bitmapCache.decode(thumb)?.asImageBitmap() }
-        }
+        value =
+            if (thumb == null || bitmapCache == null) {
+                null
+            } else {
+                withContext(Dispatchers.IO) { bitmapCache.decode(thumb)?.asImageBitmap() }
+            }
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .aspectRatio(9f / 19.5f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
-                .pointerInput(node.id) { detectTapGestures(onTap = { onTap() }) },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .aspectRatio(9f / 19.5f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
+                    .pointerInput(node.id) { detectTapGestures(onTap = { onTap() }) },
         ) {
             val current = bitmap
             if (current != null) {
@@ -176,7 +190,11 @@ private fun DesignTile(node: StitchNode, bitmapCache: BitmapCache?, onTap: () ->
 }
 
 @Composable
-private fun Scrubber(count: Int, current: Int, modifier: Modifier = Modifier) {
+private fun Scrubber(
+    count: Int,
+    current: Int,
+    modifier: Modifier = Modifier,
+) {
     if (count <= 20) {
         LazyRow(
             modifier = modifier.fillMaxWidth(),
@@ -184,13 +202,17 @@ private fun Scrubber(count: Int, current: Int, modifier: Modifier = Modifier) {
         ) {
             items(count) { i ->
                 Box(
-                    modifier = Modifier
-                        .size(if (i == current) 8.dp else 6.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (i == current) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant,
-                        ),
+                    modifier =
+                        Modifier
+                            .size(if (i == current) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (i == current) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
+                            ),
                 )
             }
         }

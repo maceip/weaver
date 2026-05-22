@@ -38,8 +38,8 @@ package com.weaver.app.webview
  * app/src/test/resources/stitch-fixtures/.
  */
 internal object StitchFetchInterceptor {
-
-    val source: String = """
+    val source: String =
+        """
 (function(){
   if (window.__weaverFetchHooked) return;
   window.__weaverFetchHooked = true;
@@ -229,5 +229,5 @@ internal object StitchFetchInterceptor {
     });
   };
 })();
-""".trimIndent()
+        """.trimIndent()
 }

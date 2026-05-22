@@ -81,20 +81,28 @@ internal val MessageStatus.palette: MessageStatusPalette
     get() {
         val isDarkScheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
         return when (this) {
-            MessageStatus.IN_PROGRESS -> MessageStatusPalette(
-                container = Amber500,
-                onContainer = Color.Black,
-                onSurface = if (isDarkScheme) Amber300 else Amber800,
-            )
-            MessageStatus.SUCCESS -> MessageStatusPalette(
-                container = Green500,
-                onContainer = Color.White,
-                onSurface = if (isDarkScheme) Green300 else Green800,
-            )
-            MessageStatus.ERROR -> MessageStatusPalette(
-                container = Red500,
-                onContainer = Color.White,
-                onSurface = if (isDarkScheme) Red300 else Red800,
-            )
+            MessageStatus.IN_PROGRESS -> {
+                MessageStatusPalette(
+                    container = Amber500,
+                    onContainer = Color.Black,
+                    onSurface = if (isDarkScheme) Amber300 else Amber800,
+                )
+            }
+
+            MessageStatus.SUCCESS -> {
+                MessageStatusPalette(
+                    container = Green500,
+                    onContainer = Color.White,
+                    onSurface = if (isDarkScheme) Green300 else Green800,
+                )
+            }
+
+            MessageStatus.ERROR -> {
+                MessageStatusPalette(
+                    container = Red500,
+                    onContainer = Color.White,
+                    onSurface = if (isDarkScheme) Red300 else Red800,
+                )
+            }
         }
     }

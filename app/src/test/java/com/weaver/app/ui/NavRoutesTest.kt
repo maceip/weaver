@@ -7,7 +7,6 @@ import org.junit.Test
 
 /** Verifies the back stack always resolves the project the user is inside. */
 class NavRoutesTest {
-
     @Test
     fun emptyStackHasNoProject() {
         assertNull(emptyList<NavKey>().currentProjectId())
@@ -46,13 +45,14 @@ class NavRoutesTest {
     fun deepFocusedHistoryStillResolvesProject() {
         // A rich design-to-design history is the whole point of pushing
         // Focused entries — currentProjectId must hold through it.
-        val stack = listOf<NavKey>(
-            Home,
-            Overview("p1"),
-            Focused("p1", "a"),
-            Focused("p1", "b"),
-            Focused("p1", "c"),
-        )
+        val stack =
+            listOf<NavKey>(
+                Home,
+                Overview("p1"),
+                Focused("p1", "a"),
+                Focused("p1", "b"),
+                Focused("p1", "c"),
+            )
         assertEquals("p1", stack.currentProjectId())
     }
 }

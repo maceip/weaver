@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ShakeAnalyzerTest {
-
     private val g = GRAVITY_EARTH_MS2
     private val force = SHAKE_FORCE_THRESHOLD + 1f
 
@@ -15,7 +14,11 @@ class ShakeAnalyzerTest {
      * reading counts as a reversal because `prevX` starts at 0.
      * Each subsequent sign flip also counts as one reversal.
      */
-    private fun feedReversals(analyzer: ShakeAnalyzer, count: Int, startMs: Long): Long {
+    private fun feedReversals(
+        analyzer: ShakeAnalyzer,
+        count: Int,
+        startMs: Long,
+    ): Long {
         var t = startMs
         for (i in 0 until count) {
             val v = if (i % 2 == 0) force else -force

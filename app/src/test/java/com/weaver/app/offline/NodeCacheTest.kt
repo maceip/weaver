@@ -12,14 +12,16 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class NodeCacheTest {
-
     private lateinit var context: Context
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("weaver_node_cache", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences("weaver_node_cache", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
     }
 
     private fun nodes(vararg ids: String) = ids.map { StitchNode(id = it) }

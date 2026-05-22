@@ -20,11 +20,12 @@ internal fun routeDecision(
     remoteStatus: TransportStatus,
     localUsable: Boolean,
     remoteUsable: Boolean,
-): RouteChoice = when {
-    localStatus == TransportStatus.Ready && localUsable -> RouteChoice.Local
-    remoteStatus == TransportStatus.Ready && remoteUsable -> RouteChoice.Remote
-    localStatus == TransportStatus.Degraded && localUsable -> RouteChoice.Local
-    remoteUsable -> RouteChoice.Remote
-    localUsable -> RouteChoice.Local
-    else -> RouteChoice.None
-}
+): RouteChoice =
+    when {
+        localStatus == TransportStatus.Ready && localUsable -> RouteChoice.Local
+        remoteStatus == TransportStatus.Ready && remoteUsable -> RouteChoice.Remote
+        localStatus == TransportStatus.Degraded && localUsable -> RouteChoice.Local
+        remoteUsable -> RouteChoice.Remote
+        localUsable -> RouteChoice.Local
+        else -> RouteChoice.None
+    }

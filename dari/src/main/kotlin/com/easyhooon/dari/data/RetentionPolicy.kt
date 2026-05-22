@@ -9,7 +9,6 @@ import com.easyhooon.dari.MessageEntry
  * exercised by plain JVM unit tests without pulling in Room or Android.
  */
 internal object RetentionPolicy {
-
     /**
      * Computes the cutoff timestamp for retention.
      *
@@ -19,8 +18,10 @@ internal object RetentionPolicy {
      * @return the cutoff (`now - retentionPeriodMs`) or `null` when TTL is
      *   disabled ([retentionPeriodMs] is `null`).
      */
-    fun cutoff(now: Long, retentionPeriodMs: Long?): Long? =
-        retentionPeriodMs?.let { now - it }
+    fun cutoff(
+        now: Long,
+        retentionPeriodMs: Long?,
+    ): Long? = retentionPeriodMs?.let { now - it }
 
     /**
      * Filters out entries older than the given cutoff.
@@ -29,6 +30,8 @@ internal object RetentionPolicy {
      * @param cutoff the value returned by [cutoff]. When `null` the input
      *   list is returned as-is (TTL disabled).
      */
-    fun prune(entries: List<MessageEntry>, cutoff: Long?): List<MessageEntry> =
-        if (cutoff == null) entries else entries.filter { it.requestTimestamp >= cutoff }
+    fun prune(
+        entries: List<MessageEntry>,
+        cutoff: Long?,
+    ): List<MessageEntry> = if (cutoff == null) entries else entries.filter { it.requestTimestamp >= cutoff }
 }

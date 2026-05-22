@@ -12,14 +12,16 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class AnnotationStoreTest {
-
     private lateinit var context: Context
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("weaver_annotations", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences("weaver_annotations", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
     }
 
     @Test
@@ -27,10 +29,16 @@ class AnnotationStoreTest {
         val store = AnnotationStore(context)
 
         assertTrue("first toggle favorites the node", store.toggleFavorite("n1"))
-        assertTrue(store.state.value.favorites.contains("n1"))
+        assertTrue(
+            store.state.value.favorites
+                .contains("n1"),
+        )
 
         assertFalse("second toggle un-favorites it", store.toggleFavorite("n1"))
-        assertFalse(store.state.value.favorites.contains("n1"))
+        assertFalse(
+            store.state.value.favorites
+                .contains("n1"),
+        )
     }
 
     @Test
@@ -62,7 +70,12 @@ class AnnotationStoreTest {
         store.addNote("n1", "two")
         store.addNote("n2", "other")
 
-        assertEquals(listOf("one", "two"), store.state.value.notes.filter { it.targetId == "n1" }.map { it.text })
+        assertEquals(
+            listOf("one", "two"),
+            store.state.value.notes
+                .filter { it.targetId == "n1" }
+                .map { it.text },
+        )
         assertEquals(3, store.state.value.notes.size)
     }
 
@@ -74,8 +87,16 @@ class AnnotationStoreTest {
         }
         val reloaded = AnnotationStore(context)
 
-        assertTrue(reloaded.state.value.favorites.contains("n1"))
-        assertEquals("revisit later", reloaded.state.value.notes.single().text)
+        assertTrue(
+            reloaded.state.value.favorites
+                .contains("n1"),
+        )
+        assertEquals(
+            "revisit later",
+            reloaded.state.value.notes
+                .single()
+                .text,
+        )
     }
 
     @Test
@@ -84,6 +105,10 @@ class AnnotationStoreTest {
             toggleFavorite("n1")
             toggleFavorite("n1")
         }
-        assertTrue(AnnotationStore(context).state.value.favorites.isEmpty())
+        assertTrue(
+            AnnotationStore(context)
+                .state.value.favorites
+                .isEmpty(),
+        )
     }
 }

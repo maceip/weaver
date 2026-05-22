@@ -20,21 +20,29 @@ private data class ProjectNodes(
  * immediately on a cold, offline launch instead of showing a blank canvas.
  * Capped to the most recently saved projects to keep prefs small.
  */
-class NodeCache(context: Context) {
+class NodeCache(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private var entries: List<ProjectNodes> = load()
 
-    fun save(projectId: String, nodes: List<StitchNode>) {
+    fun save(
+        projectId: String,
+        nodes: List<StitchNode>,
+    ) {
         val next = ProjectNodes(projectId, nodes, System.currentTimeMillis())
         entries = (listOf(next) + entries.filterNot { it.projectId == projectId }).take(MAX_PROJECTS)
         persist()
     }
 
-    fun load(projectId: String): List<StitchNode> =
-        entries.firstOrNull { it.projectId == projectId }?.nodes ?: emptyList()
+    fun load(projectId: String): List<StitchNode> = entries.firstOrNull { it.projectId == projectId }?.nodes ?: emptyList()
 
     private fun load(): List<ProjectNodes> {
         val raw = prefs.getString(KEY, null) ?: return emptyList()

@@ -32,7 +32,6 @@ private const val ANDROID_KEYSTORE = "AndroidKeyStore"
  * the chain is generated once on first use and cached for the process.
  */
 class AttestationProvider {
-
     @Volatile
     private var cached: String? = null
 
@@ -57,11 +56,13 @@ class AttestationProvider {
         // is the chain + app identity, which a challenge does not affect.
         val challenge = ByteArray(24).also { SecureRandom().nextBytes(it) }
 
-        val spec = KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_SIGN)
-            .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-            .setDigests(KeyProperties.DIGEST_SHA256)
-            .setAttestationChallenge(challenge)
-            .build()
+        val spec =
+            KeyGenParameterSpec
+                .Builder(KEY_ALIAS, KeyProperties.PURPOSE_SIGN)
+                .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                .setDigests(KeyProperties.DIGEST_SHA256)
+                .setAttestationChallenge(challenge)
+                .build()
 
         KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, ANDROID_KEYSTORE).apply {
             initialize(spec)
@@ -69,8 +70,9 @@ class AttestationProvider {
         }
 
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        val chain = keyStore.getCertificateChain(KEY_ALIAS)
-            ?: error("no attestation chain — device lacks hardware key attestation")
+        val chain =
+            keyStore.getCertificateChain(KEY_ALIAS)
+                ?: error("no attestation chain — device lacks hardware key attestation")
 
         val json = JSONArray()
         for (cert in chain) {

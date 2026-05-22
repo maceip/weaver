@@ -10,6 +10,5 @@ internal object StitchUrls {
      *   https://app-companion-430619.appspot.com/projects/<id>?usegapi=1...
      * Returns null for anything else (landing page, /assets, pings).
      */
-    fun extractProjectId(url: String): String? =
-        projectIdRegex.find(url)?.groupValues?.get(1)
+    fun extractProjectId(url: String): String? = projectIdRegex.find(url)?.groupValues?.get(1)
 }

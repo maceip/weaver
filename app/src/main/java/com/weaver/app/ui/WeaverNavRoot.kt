@@ -1,5 +1,6 @@
 package com.weaver.app.ui
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import android.content.Context
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -84,17 +84,19 @@ fun WeaverNavRoot(
     val backStack = rememberNavBackStack(Login)
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
-    val directive = remember(windowAdaptiveInfo) {
-        calculatePaneScaffoldDirective(windowAdaptiveInfo)
-            .copy(horizontalPartitionSpacerSize = 0.dp, verticalPartitionSpacerSize = 0.dp)
-    }
+    val directive =
+        remember(windowAdaptiveInfo) {
+            calculatePaneScaffoldDirective(windowAdaptiveInfo)
+                .copy(horizontalPartitionSpacerSize = 0.dp, verticalPartitionSpacerSize = 0.dp)
+        }
     // One adaptive signal: room for two panes also means room for wide chrome.
     val isWide = directive.maxHorizontalPartitions > 1
     val isTabletop = foldState?.isTabletop == true
-    val supportingPaneStrategy = rememberSupportingPaneSceneStrategy<NavKey>(
-        backNavigationBehavior = BackNavigationBehavior.PopUntilCurrentDestinationChange,
-        directive = directive,
-    )
+    val supportingPaneStrategy =
+        rememberSupportingPaneSceneStrategy<NavKey>(
+            backNavigationBehavior = BackNavigationBehavior.PopUntilCurrentDestinationChange,
+            directive = directive,
+        )
 
     // Once authenticated, jump straight to Home.
     LaunchedEffect(authState) {
@@ -112,14 +114,17 @@ fun WeaverNavRoot(
         if (top is Login || top is Home || top == null) return@LaunchedEffect
         val projectId = backStack.currentProjectId() ?: return@LaunchedEffect
         when {
-            selection.size > 1 && top !is MultiSelect && top !is Focused ->
+            selection.size > 1 && top !is MultiSelect && top !is Focused -> {
                 backStack.add(MultiSelect(projectId))
+            }
 
-            selection.isEmpty() && top is MultiSelect ->
+            selection.isEmpty() && top is MultiSelect -> {
                 backStack.removeLastOrNull()
+            }
 
-            selection.size == 1 && top is Focused && top.nodeId != selection.first() ->
+            selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
                 backStack.add(Focused(projectId, selection.first()))
+            }
         }
     }
 
@@ -162,89 +167,92 @@ fun WeaverNavRoot(
                 if (top is MultiSelect) bridge.send(Inbound.ClearSelection)
             },
             sceneStrategies = listOf(supportingPaneStrategy),
-            entryProvider = entryProvider {
-                entry<Login> {
-                    LoginScreen(
-                        authController = authController,
-                        state = authState,
-                        onAuthenticated = {
-                            // No-op: the LaunchedEffect above advances the stack.
-                        },
-                    )
-                }
-                entry<Home>(metadata = SupportingPaneSceneStrategy.mainPane()) {
-                    HomeScreen(
-                        repository = projectRepository,
-                        onOpen = { project ->
-                            projectRepository.touch(project.id)
-                            backStack.add(Overview(project.id))
-                        },
-                        onNewProject = { seedPrompt ->
-                            val project = projectRepository.newProject(
-                                title = seedPrompt.take(40).ifBlank { "Untitled" },
-                            )
-                            backStack.add(Overview(project.id))
-                            bridge.send(
-                                Inbound.SubmitPrompt(
-                                    text = seedPrompt,
-                                    presetId = null,
-                                    modelId = null,
-                                ),
-                            )
-                            taskTracker.submit(seedPrompt, queued = !online)
-                        },
-                    )
-                }
-                entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) { route ->
-                    LaunchedEffect(route.projectId) {
-                        bridge.seedNodes(nodeCache.load(route.projectId))
-                    }
-                    OverviewPane(
-                        nodes = nodes,
-                        primary = selection.firstOrNull(),
-                        bridge = bridge,
-                        bitmapCache = bitmapCache,
-                        onFocus = { id ->
-                            bridge.send(Inbound.SelectNode(id))
-                            backStack.add(Focused(route.projectId, id))
-                        },
-                    )
-                }
-                entry<Focused>(metadata = SupportingPaneSceneStrategy.supportingPane()) { route ->
-                    val node = nodes.firstOrNull { it.id == route.nodeId }
-                    if (node != null) {
-                        FocusedPane(
-                            node = node,
-                            neighbour = nodes.getOrNull(nodes.indexOf(node) + 1)
-                                ?: nodes.getOrNull(nodes.indexOf(node) - 1),
-                            isWide = isWide,
-                            bridge = bridge,
-                            bitmapCache = bitmapCache,
-                            selection = selection,
-                            figmaInstalled = figmaInstalled,
-                            isFavorite = node.id in annotations.favorites,
-                            noteCount = annotations.notes.count { it.targetId == node.id },
-                            onToggleFavorite = {
-                                annotationStore.toggleFavorite(node.id)
-                                bridge.send(Inbound.ToggleFavorite(node.id))
-                            },
-                            onAddNote = { text ->
-                                annotationStore.addNote(node.id, text)
-                                bridge.send(Inbound.AddNote(node.id, text))
+            entryProvider =
+                entryProvider {
+                    entry<Login> {
+                        LoginScreen(
+                            authController = authController,
+                            state = authState,
+                            onAuthenticated = {
+                                // No-op: the LaunchedEffect above advances the stack.
                             },
                         )
                     }
-                }
-                entry<MultiSelect>(metadata = SupportingPaneSceneStrategy.mainPane()) {
-                    MultiSelectPane(
-                        nodes = nodes.filter { it.id in selection },
-                        selection = selection,
-                        bridge = bridge,
-                        bitmapCache = bitmapCache,
-                        figmaInstalled = figmaInstalled,
-                    )
-                }
-            },
+                    entry<Home>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                        HomeScreen(
+                            repository = projectRepository,
+                            onOpen = { project ->
+                                projectRepository.touch(project.id)
+                                backStack.add(Overview(project.id))
+                            },
+                            onNewProject = { seedPrompt ->
+                                val project =
+                                    projectRepository.newProject(
+                                        title = seedPrompt.take(40).ifBlank { "Untitled" },
+                                    )
+                                backStack.add(Overview(project.id))
+                                bridge.send(
+                                    Inbound.SubmitPrompt(
+                                        text = seedPrompt,
+                                        presetId = null,
+                                        modelId = null,
+                                    ),
+                                )
+                                taskTracker.submit(seedPrompt, queued = !online)
+                            },
+                        )
+                    }
+                    entry<Overview>(metadata = SupportingPaneSceneStrategy.mainPane()) { route ->
+                        LaunchedEffect(route.projectId) {
+                            bridge.seedNodes(nodeCache.load(route.projectId))
+                        }
+                        OverviewPane(
+                            nodes = nodes,
+                            primary = selection.firstOrNull(),
+                            bridge = bridge,
+                            bitmapCache = bitmapCache,
+                            onFocus = { id ->
+                                bridge.send(Inbound.SelectNode(id))
+                                backStack.add(Focused(route.projectId, id))
+                            },
+                        )
+                    }
+                    entry<Focused>(metadata = SupportingPaneSceneStrategy.supportingPane()) { route ->
+                        val node = nodes.firstOrNull { it.id == route.nodeId }
+                        if (node != null) {
+                            FocusedPane(
+                                node = node,
+                                neighbour =
+                                    nodes.getOrNull(nodes.indexOf(node) + 1)
+                                        ?: nodes.getOrNull(nodes.indexOf(node) - 1),
+                                isWide = isWide,
+                                bridge = bridge,
+                                bitmapCache = bitmapCache,
+                                selection = selection,
+                                figmaInstalled = figmaInstalled,
+                                isFavorite = node.id in annotations.favorites,
+                                noteCount = annotations.notes.count { it.targetId == node.id },
+                                onToggleFavorite = {
+                                    annotationStore.toggleFavorite(node.id)
+                                    bridge.send(Inbound.ToggleFavorite(node.id))
+                                },
+                                onAddNote = { text ->
+                                    annotationStore.addNote(node.id, text)
+                                    bridge.send(Inbound.AddNote(node.id, text))
+                                },
+                            )
+                        }
+                    }
+                    entry<MultiSelect>(metadata = SupportingPaneSceneStrategy.mainPane()) {
+                        MultiSelectPane(
+                            nodes = nodes.filter { it.id in selection },
+                            selection = selection,
+                            bridge = bridge,
+                            bitmapCache = bitmapCache,
+                            figmaInstalled = figmaInstalled,
+                        )
+                    }
+                },
         )
 
         val top = backStack.lastOrNull()
@@ -254,19 +262,21 @@ fun WeaverNavRoot(
             AgentOrb(
                 tasks = tasks,
                 online = online,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(top = 12.dp, end = 12.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(top = 12.dp, end = 12.dp),
             )
         }
 
         // Chrome — tool palette + prompt dock — only visible inside a project.
         if (top !is Login && top !is Home) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 8.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp),
             ) {
                 CanvasToolPalette(
                     activeTool = activeTool,
@@ -311,9 +321,10 @@ private fun OverviewPane(
     )
 }
 
-private fun isFigmaInstalled(context: Context): Boolean = runCatching {
-    context.packageManager.getLaunchIntentForPackage("com.figma.mirror") != null
-}.getOrDefault(false)
+private fun isFigmaInstalled(context: Context): Boolean =
+    runCatching {
+        context.packageManager.getLaunchIntentForPackage("com.figma.mirror") != null
+    }.getOrDefault(false)
 
 @Composable
 private fun FocusedPane(
@@ -348,16 +359,18 @@ private fun FocusedPane(
             noteCount = noteCount,
             onToggleFavorite = onToggleFavorite,
             onAddNote = onAddNote,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 12.dp, top = 12.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 12.dp, top = 12.dp),
         )
 
         if (selection.isNotEmpty()) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 12.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 12.dp),
             ) {
                 CanvasToolbar(
                     selectedIds = selection,
@@ -372,9 +385,10 @@ private fun FocusedPane(
 
         if (!isWide) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 64.dp, bottom = 96.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 64.dp, bottom = 96.dp),
             ) {
                 SizeBadge(widthPx = node.w.toInt(), heightPx = node.h.toInt())
             }
@@ -399,9 +413,10 @@ private fun MultiSelectPane(
             bitmapCache = bitmapCache,
         )
         Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 12.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp),
         ) {
             CanvasToolbar(
                 selectedIds = selection,
@@ -437,11 +452,12 @@ private fun PromptDock(
         PromptInput(
             state = state,
             presets = presets,
-            placeholder = if (online) {
-                "What would you like to change or create?"
-            } else {
-                "Offline — your request will be sent when you reconnect"
-            },
+            placeholder =
+                if (online) {
+                    "What would you like to change or create?"
+                } else {
+                    "Offline — your request will be sent when you reconnect"
+                },
             onStateChange = onStateChange,
             onSubmit = {
                 val text = state.text.text.trim()
@@ -464,19 +480,21 @@ private fun PromptDock(
                     // Chromium's user-activation gate for a scripted file-input
                     // click, so the picker is launched from here instead.
                     AttachmentKind.UploadFile -> onRequestUpload()
+
                     else -> bridge.send(Inbound.Attach(kind))
                 }
             },
             onVoice = {
                 // TODO: launch speech recognizer, then dispatch Inbound.VoiceInput
             },
-            modifier = Modifier
-                .widthIn(max = if (isWide) 760.dp else Dp.Unspecified)
-                .padding(
-                    start = 12.dp,
-                    end = 12.dp,
-                    bottom = if (isTabletop) 48.dp else 16.dp,
-                ),
+            modifier =
+                Modifier
+                    .widthIn(max = if (isWide) 760.dp else Dp.Unspecified)
+                    .padding(
+                        start = 12.dp,
+                        end = 12.dp,
+                        bottom = if (isTabletop) 48.dp else 16.dp,
+                    ),
         )
     }
 }

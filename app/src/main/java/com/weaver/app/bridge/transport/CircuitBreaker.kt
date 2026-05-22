@@ -26,7 +26,10 @@ internal class CircuitBreaker(
     private var openedAt: Long = 0L
 
     /** Feed a status observation. [now] is a monotonic millisecond clock. */
-    fun onStatus(status: TransportStatus, now: Long) {
+    fun onStatus(
+        status: TransportStatus,
+        now: Long,
+    ) {
         when (status) {
             TransportStatus.Ready -> {
                 consecutiveFailures = 0
@@ -37,6 +40,7 @@ internal class CircuitBreaker(
                 // elapses (see usable()).
                 if (state == State.HalfOpen) state = State.Closed
             }
+
             TransportStatus.Failed -> {
                 consecutiveFailures += 1
                 // A failed probe re-opens immediately; otherwise trip on the
@@ -46,7 +50,10 @@ internal class CircuitBreaker(
                     openedAt = now
                 }
             }
-            else -> Unit // Idle / Connecting / Degraded don't move the breaker
+
+            else -> {
+                Unit
+            } // Idle / Connecting / Degraded don't move the breaker
         }
     }
 
@@ -54,15 +61,19 @@ internal class CircuitBreaker(
      * True when the router may route to this transport. An Open breaker whose
      * cooldown has elapsed transitions to HalfOpen and permits one probe.
      */
-    fun usable(now: Long): Boolean = when (state) {
-        State.Closed, State.HalfOpen -> true
-        State.Open -> {
-            if (now - openedAt >= cooldownMs) {
-                state = State.HalfOpen
+    fun usable(now: Long): Boolean =
+        when (state) {
+            State.Closed, State.HalfOpen -> {
                 true
-            } else {
-                false
+            }
+
+            State.Open -> {
+                if (now - openedAt >= cooldownMs) {
+                    state = State.HalfOpen
+                    true
+                } else {
+                    false
+                }
             }
         }
-    }
 }

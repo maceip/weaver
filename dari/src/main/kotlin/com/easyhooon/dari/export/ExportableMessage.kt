@@ -23,25 +23,28 @@ internal data class ExportableMessage(
     @SerialName("duration_ms") val durationMs: Long? = null,
 )
 
-internal fun MessageEntry.toExportable(): ExportableMessage = ExportableMessage(
-    id = id,
-    requestId = requestId,
-    handlerName = handlerName,
-    direction = when (direction) {
-        MessageDirection.WEB_TO_APP -> "WEB_TO_APP"
-        MessageDirection.APP_TO_WEB -> "APP_TO_WEB"
-    },
-    tag = tag,
-    requestData = requestData,
-    responseData = responseData,
-    requestDataTruncated = requestDataTruncated,
-    responseDataTruncated = responseDataTruncated,
-    status = when (status) {
-        MessageStatus.IN_PROGRESS -> "IN_PROGRESS"
-        MessageStatus.SUCCESS -> "SUCCESS"
-        MessageStatus.ERROR -> "ERROR"
-    },
-    requestTimestamp = requestTimestamp,
-    responseTimestamp = responseTimestamp,
-    durationMs = durationMs,
-)
+internal fun MessageEntry.toExportable(): ExportableMessage =
+    ExportableMessage(
+        id = id,
+        requestId = requestId,
+        handlerName = handlerName,
+        direction =
+            when (direction) {
+                MessageDirection.WEB_TO_APP -> "WEB_TO_APP"
+                MessageDirection.APP_TO_WEB -> "APP_TO_WEB"
+            },
+        tag = tag,
+        requestData = requestData,
+        responseData = responseData,
+        requestDataTruncated = requestDataTruncated,
+        responseDataTruncated = responseDataTruncated,
+        status =
+            when (status) {
+                MessageStatus.IN_PROGRESS -> "IN_PROGRESS"
+                MessageStatus.SUCCESS -> "SUCCESS"
+                MessageStatus.ERROR -> "ERROR"
+            },
+        requestTimestamp = requestTimestamp,
+        responseTimestamp = responseTimestamp,
+        durationMs = durationMs,
+    )

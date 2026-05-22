@@ -33,7 +33,6 @@ internal class DariPreferences(
     private val dataStore: DataStore<Preferences>,
     private val defaultShakeToOpen: Boolean,
 ) {
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _shakeToOpen = MutableStateFlow(defaultShakeToOpen)

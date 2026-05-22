@@ -44,22 +44,24 @@ fun FocusedAnnotations(
     var noteOpen by remember { mutableStateOf(false) }
 
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp))
-            .padding(horizontal = 2.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(22.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp))
+                .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onToggleFavorite) {
             Icon(
                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
                 contentDescription = "Favorite",
-                tint = if (isFavorite) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                tint =
+                    if (isFavorite) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
         }
         Box {
@@ -68,12 +70,13 @@ fun FocusedAnnotations(
             }
             if (noteCount > 0) {
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 6.dp, end = 6.dp)
-                        .size(14.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 6.dp, end = 6.dp)
+                            .size(14.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -98,7 +101,10 @@ fun FocusedAnnotations(
 }
 
 @Composable
-private fun NoteDialog(onDismiss: () -> Unit, onSave: (String) -> Unit) {
+private fun NoteDialog(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
     var text by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,

@@ -14,22 +14,29 @@ import java.util.UUID
 private const val PREFS_NAME = "weaver_projects"
 private const val KEY_PROJECTS = "projects"
 
-class ProjectRepository(context: Context) {
+class ProjectRepository(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private val _projects = MutableStateFlow(load())
     val projects: StateFlow<List<Project>> = _projects.asStateFlow()
 
     fun newProject(title: String = "Untitled"): Project {
         val now = System.currentTimeMillis()
-        val project = Project(
-            id = UUID.randomUUID().toString(),
-            title = title,
-            createdAt = now,
-            lastModified = now,
-        )
+        val project =
+            Project(
+                id = UUID.randomUUID().toString(),
+                title = title,
+                createdAt = now,
+                lastModified = now,
+            )
         upsert(project)
         return project
     }
@@ -44,13 +51,18 @@ class ProjectRepository(context: Context) {
 
     fun touch(id: String) {
         _projects.update { current ->
-            current.map { if (it.id == id) it.copy(lastModified = System.currentTimeMillis()) else it }
+            current
+                .map { if (it.id == id) it.copy(lastModified = System.currentTimeMillis()) else it }
                 .sortedByDescending { it.lastModified }
         }
         persist()
     }
 
-    fun bindStitchId(id: String, stitchProjectId: String, thumbUri: String? = null) {
+    fun bindStitchId(
+        id: String,
+        stitchProjectId: String,
+        thumbUri: String? = null,
+    ) {
         _projects.update { current ->
             current.map {
                 if (it.id == id) {

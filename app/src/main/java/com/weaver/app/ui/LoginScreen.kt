@@ -55,19 +55,21 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Voltage),
+                    modifier =
+                        Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Voltage),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "W",
-                        style = WeaverType.Display.copy(
-                            color = VoltageInk,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        style =
+                            WeaverType.Display.copy(
+                                color = VoltageInk,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
                 }
                 Spacer(Modifier.height(20.dp))
@@ -101,21 +103,23 @@ fun LoginScreen(
 @Composable
 private fun SignInButton(onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(Voltage)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(100.dp))
+                .background(Voltage)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 22.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             "Continue with Google",
-            style = WeaverType.Body.copy(
-                color = VoltageInk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-            ),
+            style =
+                WeaverType.Body.copy(
+                    color = VoltageInk,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                ),
         )
     }
 }

@@ -14,14 +14,20 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ExportSheetTest {
-
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val allLabels = listOf(
-        "Copy to Figma", "Download code", "Copy code", "Google AI Studio",
-        "Firebase", "Jules", "Lovable", "Bolt",
-    )
+    private val allLabels =
+        listOf(
+            "Copy to Figma",
+            "Download code",
+            "Copy code",
+            "Google AI Studio",
+            "Firebase",
+            "Jules",
+            "Lovable",
+            "Bolt",
+        )
 
     @Test
     fun showsEveryExportOption() {

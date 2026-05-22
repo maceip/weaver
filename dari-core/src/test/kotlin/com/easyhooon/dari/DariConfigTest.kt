@@ -10,7 +10,6 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 class DariConfigTest {
-
     @Test
     fun `default retention period is null (disabled)`() {
         assertNull(DariConfig().retentionPeriod)

@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DariConfigTest {
-
     @Test
     fun `default values are applied`() {
         val config = DariConfig()
@@ -16,11 +15,12 @@ class DariConfigTest {
 
     @Test
     fun `custom values override defaults`() {
-        val config = DariConfig(
-            maxEntries = 100,
-            showNotification = false,
-            maxContentLength = 1_000_000,
-        )
+        val config =
+            DariConfig(
+                maxEntries = 100,
+                showNotification = false,
+                maxContentLength = 1_000_000,
+            )
         assertEquals(100, config.maxEntries)
         assertEquals(false, config.showNotification)
         assertEquals(1_000_000, config.maxContentLength)

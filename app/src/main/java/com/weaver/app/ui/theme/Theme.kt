@@ -9,20 +9,21 @@ import androidx.compose.runtime.Composable
 //
 // We use plain MaterialTheme for now; MaterialExpressiveTheme + MotionScheme
 // are still `internal` in material3 1.4.0 stable. Swap when public.
-private val VoltageScheme = darkColorScheme(
-    primary = Voltage,
-    onPrimary = VoltageInk,
-    primaryContainer = VoltageDim,
-    onPrimaryContainer = Voltage,
-    background = Bg,
-    onBackground = TextPrimary,
-    surface = Surface1,
-    onSurface = TextPrimary,
-    surfaceVariant = Surface2,
-    onSurfaceVariant = TextDim,
-    outline = LineStrong,
-    outlineVariant = Line,
-)
+private val VoltageScheme =
+    darkColorScheme(
+        primary = Voltage,
+        onPrimary = VoltageInk,
+        primaryContainer = VoltageDim,
+        onPrimaryContainer = Voltage,
+        background = Bg,
+        onBackground = TextPrimary,
+        surface = Surface1,
+        onSurface = TextPrimary,
+        surfaceVariant = Surface2,
+        onSurfaceVariant = TextDim,
+        outline = LineStrong,
+        outlineVariant = Line,
+    )
 
 @Composable
 fun WeaverTheme(

@@ -28,7 +28,6 @@ class FoldObserver(
     private val activity: Activity,
     private val bridge: Bridge,
 ) {
-
     private val _state = MutableStateFlow(FoldState())
     val state: StateFlow<FoldState> = _state.asStateFlow()
 
@@ -40,15 +39,18 @@ class FoldObserver(
                 tracker.windowLayoutInfo(activity).collect { info ->
                     val bounds = metricsCalculator.computeCurrentWindowMetrics(activity).bounds
                     val fold = info.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull()
-                    val next = FoldState(
-                        isFolded = fold?.state == FoldingFeature.State.FLAT &&
-                            fold.orientation == FoldingFeature.Orientation.VERTICAL,
-                        isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
-                        isTabletop = fold?.state == FoldingFeature.State.HALF_OPENED &&
-                            fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
-                        widthPx = bounds.width(),
-                        heightPx = bounds.height(),
-                    )
+                    val next =
+                        FoldState(
+                            isFolded =
+                                fold?.state == FoldingFeature.State.FLAT &&
+                                    fold.orientation == FoldingFeature.Orientation.VERTICAL,
+                            isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
+                            isTabletop =
+                                fold?.state == FoldingFeature.State.HALF_OPENED &&
+                                    fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
+                            widthPx = bounds.width(),
+                            heightPx = bounds.height(),
+                        )
                     if (next != _state.value) {
                         _state.value = next
                         bridge.send(Inbound.ViewportChanged(next.widthPx, next.heightPx))

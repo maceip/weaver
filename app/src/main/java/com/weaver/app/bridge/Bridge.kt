@@ -30,11 +30,12 @@ class Bridge(
     private val outbox: Outbox? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
-    val json: Json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-        classDiscriminator = "type"
-    }
+    val json: Json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            classDiscriminator = "type"
+        }
 
     private val _nodes = MutableStateFlow<List<StitchNode>>(emptyList())
     val nodes: StateFlow<List<StitchNode>> = _nodes.asStateFlow()
@@ -60,11 +61,12 @@ class Bridge(
     private val _projectThemes = MutableStateFlow<Map<String, Map<String, String>>>(emptyMap())
     val projectThemes: StateFlow<Map<String, Map<String, String>>> = _projectThemes.asStateFlow()
 
-    private val _events = MutableSharedFlow<Outbound>(
-        replay = 0,
-        extraBufferCapacity = 64,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _events =
+        MutableSharedFlow<Outbound>(
+            replay = 0,
+            extraBufferCapacity = 64,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
     val events: SharedFlow<Outbound> = _events.asSharedFlow()
 
     private var transport: BridgeTransport? = null
@@ -121,43 +123,84 @@ class Bridge(
     }
 
     fun handleOutbound(raw: String) {
-        val message = runCatching { json.decodeFromString<Outbound>(raw) }
-            .onFailure { Log.w(TAG, "decode outbound failed: ${it.message}") }
-            .getOrNull() ?: return
+        val message =
+            runCatching { json.decodeFromString<Outbound>(raw) }
+                .onFailure { Log.w(TAG, "decode outbound failed: ${it.message}") }
+                .getOrNull() ?: return
         interceptor?.onWebToAppRequest(message::class.simpleName ?: "outbound", null, raw)
         when (message) {
-            is Outbound.NodesUpdated -> _nodes.value = message.nodes
-            is Outbound.SelectionChanged -> _selection.value = message.ids
-            is Outbound.GenerationProgress -> _generation.update { it + (message.id to message.state) }
-            is Outbound.AssetReady -> _events.tryEmit(message)
-            is Outbound.ExportComplete -> _events.tryEmit(message)
-            is Outbound.AgentLogUpdated -> _agentLog.value = message.entries
-            is Outbound.SessionStarted -> _sessions.update {
-                it + (message.sessionId to SessionSnapshot(
-                    projectId = message.projectId,
-                    sessionId = message.sessionId,
-                ))
+            is Outbound.NodesUpdated -> {
+                _nodes.value = message.nodes
             }
-            is Outbound.SessionProgress -> _sessions.update { current ->
-                val existing = current[message.sessionId] ?: SessionSnapshot(
-                    projectId = "",
-                    sessionId = message.sessionId,
-                )
-                current + (message.sessionId to existing.copy(
-                    seqNo = message.seqNo,
-                    stages = message.stages,
-                ))
+
+            is Outbound.SelectionChanged -> {
+                _selection.value = message.ids
             }
-            is Outbound.SessionFinished -> _sessions.update { current ->
-                val existing = current[message.sessionId] ?: return@update current
-                current + (message.sessionId to existing.copy(
-                    finished = true,
-                    totalBytes = message.totalBytes,
-                ))
+
+            is Outbound.GenerationProgress -> {
+                _generation.update { it + (message.id to message.state) }
             }
-            is Outbound.ProjectThemeUpdated -> _projectThemes.update {
-                it + (message.projectId to message.tokens)
+
+            is Outbound.AssetReady -> {
+                _events.tryEmit(message)
             }
+
+            is Outbound.ExportComplete -> {
+                _events.tryEmit(message)
+            }
+
+            is Outbound.AgentLogUpdated -> {
+                _agentLog.value = message.entries
+            }
+
+            is Outbound.SessionStarted -> {
+                _sessions.update {
+                    it + (
+                        message.sessionId to
+                            SessionSnapshot(
+                                projectId = message.projectId,
+                                sessionId = message.sessionId,
+                            )
+                    )
+                }
+            }
+
+            is Outbound.SessionProgress -> {
+                _sessions.update { current ->
+                    val existing =
+                        current[message.sessionId] ?: SessionSnapshot(
+                            projectId = "",
+                            sessionId = message.sessionId,
+                        )
+                    current + (
+                        message.sessionId to
+                            existing.copy(
+                                seqNo = message.seqNo,
+                                stages = message.stages,
+                            )
+                    )
+                }
+            }
+
+            is Outbound.SessionFinished -> {
+                _sessions.update { current ->
+                    val existing = current[message.sessionId] ?: return@update current
+                    current + (
+                        message.sessionId to
+                            existing.copy(
+                                finished = true,
+                                totalBytes = message.totalBytes,
+                            )
+                    )
+                }
+            }
+
+            is Outbound.ProjectThemeUpdated -> {
+                _projectThemes.update {
+                    it + (message.projectId to message.tokens)
+                }
+            }
+
             is Outbound.Error -> {
                 Log.e(TAG, "stitch error ${message.code}: ${message.message}")
                 _events.tryEmit(message)
@@ -180,7 +223,8 @@ class Bridge(
         }
     }
 
-    fun rawEventDebug(raw: String): JsonObject? = runCatching {
-        json.decodeFromString<JsonObject>(raw)
-    }.getOrNull()
+    fun rawEventDebug(raw: String): JsonObject? =
+        runCatching {
+            json.decodeFromString<JsonObject>(raw)
+        }.getOrNull()
 }

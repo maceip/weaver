@@ -58,7 +58,12 @@ internal class ShakeAnalyzer(
      *
      * Z-axis has gravity subtracted so a resting device does not produce false positives.
      */
-    fun onAcceleration(x: Float, y: Float, z: Float, nowMs: Long): Boolean {
+    fun onAcceleration(
+        x: Float,
+        y: Float,
+        z: Float,
+        nowMs: Long,
+    ): Boolean {
         if (lastSampleMs >= 0L && nowMs - lastSampleMs < minSampleIntervalMs) return false
         lastSampleMs = nowMs
 
@@ -115,34 +120,40 @@ internal class ShakeAnalyzer(
  * Emits Unit each time a shake gesture is detected via the accelerometer.
  * Uses callbackFlow to wrap the SensorEventListener callback pattern.
  */
-internal fun Context.shakeEvents(): Flow<Unit> = callbackFlow {
-    val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+internal fun Context.shakeEvents(): Flow<Unit> =
+    callbackFlow {
+        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-    if (accelerometer == null) {
-        close()
-        return@callbackFlow
-    }
-
-    val analyzer = ShakeAnalyzer()
-
-    val listener = object : SensorEventListener {
-        override fun onSensorChanged(event: SensorEvent) {
-            val isShake = analyzer.onAcceleration(
-                x = event.values[0],
-                y = event.values[1],
-                z = event.values[2],
-                nowMs = System.currentTimeMillis(),
-            )
-            if (isShake) trySend(Unit)
+        if (accelerometer == null) {
+            close()
+            return@callbackFlow
         }
 
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
-    }
+        val analyzer = ShakeAnalyzer()
 
-    sensorManager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        val listener =
+            object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent) {
+                    val isShake =
+                        analyzer.onAcceleration(
+                            x = event.values[0],
+                            y = event.values[1],
+                            z = event.values[2],
+                            nowMs = System.currentTimeMillis(),
+                        )
+                    if (isShake) trySend(Unit)
+                }
 
-    awaitClose {
-        sensorManager.unregisterListener(listener)
+                override fun onAccuracyChanged(
+                    sensor: Sensor?,
+                    accuracy: Int,
+                ) = Unit
+            }
+
+        sensorManager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+
+        awaitClose {
+            sensorManager.unregisterListener(listener)
+        }
     }
-}

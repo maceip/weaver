@@ -6,7 +6,6 @@ import org.junit.Test
 
 /** Covers the accept-list classification that decides Photo Picker vs SAF. */
 class WebViewFileChooserTest {
-
     @Test
     fun emptyAcceptList_fallsBackToDocuments() {
         assertEquals(ChooserTarget.Documents, chooserTarget(emptyList()))

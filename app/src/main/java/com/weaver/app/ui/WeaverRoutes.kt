@@ -23,18 +23,26 @@ data object Login : NavKey
 data object Home : NavKey
 
 @Serializable
-data class Overview(val projectId: String) : NavKey
+data class Overview(
+    val projectId: String,
+) : NavKey
 
 @Serializable
-data class Focused(val projectId: String, val nodeId: String) : NavKey
+data class Focused(
+    val projectId: String,
+    val nodeId: String,
+) : NavKey
 
 @Serializable
-data class MultiSelect(val projectId: String) : NavKey
+data class MultiSelect(
+    val projectId: String,
+) : NavKey
 
 /** The project the user is currently inside, read off the back stack top. */
-fun List<NavKey>.currentProjectId(): String? = when (val top = lastOrNull()) {
-    is Overview -> top.projectId
-    is Focused -> top.projectId
-    is MultiSelect -> top.projectId
-    else -> null
-}
+fun List<NavKey>.currentProjectId(): String? =
+    when (val top = lastOrNull()) {
+        is Overview -> top.projectId
+        is Focused -> top.projectId
+        is MultiSelect -> top.projectId
+        else -> null
+    }

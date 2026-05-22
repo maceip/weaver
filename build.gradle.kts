@@ -26,8 +26,16 @@ tasks.matching { it.name == "preBuild" }.configureEach {
 
 allprojects {
     apply {
-        plugin(rootProject.libs.plugins.detekt.get().pluginId)
-        plugin(rootProject.libs.plugins.ktlint.get().pluginId)
+        plugin(
+            rootProject.libs.plugins.detekt
+                .get()
+                .pluginId,
+        )
+        plugin(
+            rootProject.libs.plugins.ktlint
+                .get()
+                .pluginId,
+        )
     }
 
     afterEvaluate {
@@ -39,7 +47,10 @@ allprojects {
         }
 
         extensions.configure<KtlintExtension> {
-            version.set(rootProject.libs.versions.ktlintSource.get())
+            version.set(
+                rootProject.libs.versions.ktlintSource
+                    .get(),
+            )
             android.set(true)
             verbose.set(true)
         }

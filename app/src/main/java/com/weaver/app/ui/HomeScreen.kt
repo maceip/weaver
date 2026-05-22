@@ -68,11 +68,12 @@ fun HomeScreen(
     DottedCanvas {
         Column(modifier = Modifier.fillMaxSize()) {
             PillBar(
-                items = listOf(
-                    PillItem("Projects", Icons.Rounded.FolderOpen, active = true),
-                    PillItem("Drafts", Icons.Rounded.Layers),
-                    PillItem("Shared", Icons.Rounded.IosShare),
-                ),
+                items =
+                    listOf(
+                        PillItem("Projects", Icons.Rounded.FolderOpen, active = true),
+                        PillItem("Drafts", Icons.Rounded.Layers),
+                        PillItem("Shared", Icons.Rounded.IosShare),
+                    ),
             )
 
             if (active.isEmpty() && drafts.isEmpty()) {
@@ -141,9 +142,10 @@ private fun EmptyState() {
 @Composable
 private fun RowLabel(text: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -155,10 +157,11 @@ private fun RowLabel(text: String) {
 @Composable
 private fun CardRow(content: @Composable RowScope.() -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
@@ -166,7 +169,13 @@ private fun CardRow(content: @Composable RowScope.() -> Unit) {
 }
 
 @Composable
-private fun ProjectCard(p: Project, hero: Boolean, width: Dp, height: Dp, onClick: () -> Unit) {
+private fun ProjectCard(
+    p: Project,
+    hero: Boolean,
+    width: Dp,
+    height: Dp,
+    onClick: () -> Unit,
+) {
     Box(modifier = Modifier.clickable(onClick = onClick)) {
         Artboard(
             title = p.title,
@@ -186,11 +195,13 @@ private fun ColumnScope.ProjectHero() {
     WireBlock(Modifier.fillMaxWidth(0.78f), height = 24.dp, radius = 8.dp, tint = BlockHi)
     WireBlock(Modifier.fillMaxWidth(0.55f), height = 12.dp, radius = 6.dp)
     Box(
-        modifier = Modifier
-            .padding(top = 4.dp)
-            .fillMaxWidth().weight(1f)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Block),
+        modifier =
+            Modifier
+                .padding(top = 4.dp)
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Block),
     ) {
         Box(
             Modifier.fillMaxSize().background(
@@ -212,12 +223,14 @@ private fun ColumnScope.ProjectMockup() {
     WireBlock(Modifier.fillMaxWidth(0.6f), height = 18.dp, radius = 6.dp, tint = BlockHi)
     WireBlock(Modifier.fillMaxWidth(0.4f), height = 9.dp, radius = 5.dp)
     Box(
-        modifier = Modifier
-            .padding(top = 2.dp)
-            .fillMaxWidth().weight(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Block)
-            .border(1.dp, Line, RoundedCornerShape(8.dp)),
+        modifier =
+            Modifier
+                .padding(top = 2.dp)
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Block)
+                .border(1.dp, Line, RoundedCornerShape(8.dp)),
     )
 }
 

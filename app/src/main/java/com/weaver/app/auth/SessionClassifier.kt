@@ -8,18 +8,31 @@ package com.weaver.app.auth
  */
 internal object SessionClassifier {
     /** Google's account-session cookies. Presence of any one means signed in. */
-    val GOOGLE_SESSION_COOKIES = setOf(
-        "SID", "__Secure-1PSID", "__Secure-3PSID", "SAPISID", "__Secure-3PAPISID",
-    )
+    val GOOGLE_SESSION_COOKIES =
+        setOf(
+            "SID",
+            "__Secure-1PSID",
+            "__Secure-3PSID",
+            "SAPISID",
+            "__Secure-3PAPISID",
+        )
 
     /** Consent / preference cookies that do NOT imply an authenticated session. */
-    val NON_SESSION_COOKIES = setOf(
-        "NID", "CONSENT", "SOCS", "AEC", "OTZ", "1P_JAR", "ACCOUNT_CHOOSER",
-    )
+    val NON_SESSION_COOKIES =
+        setOf(
+            "NID",
+            "CONSENT",
+            "SOCS",
+            "AEC",
+            "OTZ",
+            "1P_JAR",
+            "ACCOUNT_CHOOSER",
+        )
 
     /** Cookie names from a `name=value; name2=value2` header. */
     fun cookieNames(header: String?): List<String> =
-        header?.split(";")
+        header
+            ?.split(";")
             ?.mapNotNull { it.substringBefore("=").trim().takeIf(String::isNotEmpty) }
             ?: emptyList()
 

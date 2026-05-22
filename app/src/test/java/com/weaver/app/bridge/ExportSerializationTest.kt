@@ -14,13 +14,13 @@ import org.junit.Test
  * on-device run.
  */
 class ExportSerializationTest {
-
     // Mirrors Bridge.json so the test exercises the real wire format.
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-        classDiscriminator = "type"
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            classDiscriminator = "type"
+        }
 
     @Test
     fun exportKind_hasTheEightStitchTargets() {
@@ -42,19 +42,21 @@ class ExportSerializationTest {
 
     @Test
     fun requestExport_emitsTheDiscriminatorAndKindContentScriptExpects() {
-        val encoded = json.encodeToString(
-            Inbound.serializer(),
-            Inbound.RequestExport(ExportKind.Firebase, id = null),
-        )
+        val encoded =
+            json.encodeToString(
+                Inbound.serializer(),
+                Inbound.RequestExport(ExportKind.Firebase, id = null),
+            )
         assertTrue(encoded, encoded.contains("\"type\":\"request_export\""))
         assertTrue(encoded, encoded.contains("\"kind\":\"Firebase\""))
     }
 
     @Test
     fun attachFiles_roundTrips() {
-        val original: Inbound = Inbound.AttachFiles(
-            listOf(AttachedFile(name = "mockup.png", mime = "image/png", data = "QUJDRA==")),
-        )
+        val original: Inbound =
+            Inbound.AttachFiles(
+                listOf(AttachedFile(name = "mockup.png", mime = "image/png", data = "QUJDRA==")),
+            )
         val encoded = json.encodeToString(Inbound.serializer(), original)
         val decoded = json.decodeFromString(Inbound.serializer(), encoded)
         assertEquals(original, decoded)

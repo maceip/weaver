@@ -19,38 +19,41 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
 @OptIn(ExperimentalSerializationApi::class)
-private val prettyJson = Json {
-    prettyPrint = true
-    prettyPrintIndent = "  "
-}
+private val prettyJson =
+    Json {
+        prettyPrint = true
+        prettyPrintIndent = "  "
+    }
 
 /**
  * Composable that pretty-prints and displays a JSON string.
  */
 @Composable
 internal fun JsonViewer(jsonString: String) {
-    val formatted = remember(jsonString) {
-        try {
-            val element = prettyJson.parseToJsonElement(jsonString)
-            prettyJson.encodeToString(JsonElement.serializer(), element)
-        } catch (_: Exception) {
-            jsonString
+    val formatted =
+        remember(jsonString) {
+            try {
+                val element = prettyJson.parseToJsonElement(jsonString)
+                prettyJson.encodeToString(JsonElement.serializer(), element)
+            } catch (_: Exception) {
+                jsonString
+            }
         }
-    }
 
     Text(
         text = formatted,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(8.dp),
-            )
-            .padding(12.dp)
-            .horizontalScroll(rememberScrollState()),
-        style = MaterialTheme.typography.bodySmall.copy(
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                ).padding(12.dp)
+                .horizontalScroll(rememberScrollState()),
+        style =
+            MaterialTheme.typography.bodySmall.copy(
+                fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp,
+            ),
     )
 }

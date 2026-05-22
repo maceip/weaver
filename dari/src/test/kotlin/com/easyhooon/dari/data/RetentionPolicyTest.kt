@@ -9,8 +9,10 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class RetentionPolicyTest {
-
-    private fun entry(id: Long, timestamp: Long) = MessageEntry(
+    private fun entry(
+        id: Long,
+        timestamp: Long,
+    ) = MessageEntry(
         id = id,
         requestId = null,
         handlerName = "handler",
@@ -56,11 +58,12 @@ class RetentionPolicyTest {
 
     @Test
     fun `prune keeps entries whose timestamp is greater or equal to cutoff`() {
-        val list = listOf(
-            entry(1, 100),
-            entry(2, 500),
-            entry(3, 1_000),
-        )
+        val list =
+            listOf(
+                entry(1, 100),
+                entry(2, 500),
+                entry(3, 1_000),
+            )
         val kept = RetentionPolicy.prune(list, cutoff = 500)
         assertEquals(listOf(2L, 3L), kept.map { it.id })
     }

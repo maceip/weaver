@@ -31,10 +31,16 @@ data class Annotations(
  * source of truth: starring and note-taking always work, offline or logged out.
  * Mutations are mirrored to Stitch separately via the bridge / [Outbox].
  */
-class AnnotationStore(context: Context) {
+class AnnotationStore(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private val _state = MutableStateFlow(load())
     val state: StateFlow<Annotations> = _state.asStateFlow()
@@ -50,7 +56,10 @@ class AnnotationStore(context: Context) {
         return nowFavorite
     }
 
-    fun addNote(targetId: String, text: String): Note {
+    fun addNote(
+        targetId: String,
+        text: String,
+    ): Note {
         val note = Note(UUID.randomUUID().toString(), targetId, text, System.currentTimeMillis())
         _state.update { it.copy(notes = it.notes + note) }
         persist()

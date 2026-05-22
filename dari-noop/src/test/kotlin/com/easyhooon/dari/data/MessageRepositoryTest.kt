@@ -8,15 +8,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MessageRepositoryTest {
-
     @Test
     fun `addEntry is no-op and entries remain empty`() {
         val repository = MessageRepository()
-        val entry = MessageEntry(
-            requestId = "1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-        )
+        val entry =
+            MessageEntry(
+                requestId = "1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+            )
         repository.addEntry(entry)
 
         assertTrue(repository.entries.value.isEmpty())

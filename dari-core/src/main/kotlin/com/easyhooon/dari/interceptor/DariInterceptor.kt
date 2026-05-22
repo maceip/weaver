@@ -14,14 +14,33 @@ interface DariInterceptor {
     // A plain Boolean would collapse null into one of the two values, making per-call override impossible.
 
     /** Called when a Web -> App request is received */
-    fun onWebToAppRequest(handlerName: String, requestId: String?, requestData: String?, fireAndForget: Boolean? = null)
+    fun onWebToAppRequest(
+        handlerName: String,
+        requestId: String?,
+        requestData: String?,
+        fireAndForget: Boolean? = null,
+    )
 
     /** Called when a response is sent for a Web -> App request */
-    fun onWebToAppResponse(handlerName: String, requestId: String?, responseData: String?, isSuccess: Boolean)
+    fun onWebToAppResponse(
+        handlerName: String,
+        requestId: String?,
+        responseData: String?,
+        isSuccess: Boolean,
+    )
 
     /** Called when an App -> Web request is sent */
-    fun onAppToWebRequest(handlerName: String, requestId: String?, data: String?, fireAndForget: Boolean? = null)
+    fun onAppToWebRequest(
+        handlerName: String,
+        requestId: String?,
+        data: String?,
+        fireAndForget: Boolean? = null,
+    )
 
     /** Called when a web response is received for an App -> Web request */
-    fun onAppToWebResponse(requestId: String?, isSuccess: Boolean, responseData: String?)
+    fun onAppToWebResponse(
+        requestId: String?,
+        isSuccess: Boolean,
+        responseData: String?,
+    )
 }

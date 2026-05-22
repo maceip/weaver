@@ -6,7 +6,6 @@ import org.junit.Test
 
 /** Verifies the local-WebView health signal derived from outbound bridge JSON. */
 class OutboundClassifierTest {
-
     @Test
     fun nodesUpdatedProvesReady() {
         // Only a mounted, authenticated React Flow editor emits this.

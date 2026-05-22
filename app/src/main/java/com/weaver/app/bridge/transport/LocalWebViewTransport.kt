@@ -38,10 +38,11 @@ class LocalWebViewTransport : BridgeTransport {
     private var webView: WebView? = null
 
     /** The `window.Android` object — hand this to `addJavascriptInterface`. */
-    val jsInterface = JsBridgeInterface { json ->
-        OutboundClassifier.classify(json)?.let { _status.value = it }
-        outboundSink?.invoke(json)
-    }
+    val jsInterface =
+        JsBridgeInterface { json ->
+            OutboundClassifier.classify(json)?.let { _status.value = it }
+            outboundSink?.invoke(json)
+        }
 
     override fun setOutboundSink(sink: (String) -> Unit) {
         outboundSink = sink
@@ -75,11 +76,16 @@ class LocalWebViewTransport : BridgeTransport {
         if (_status.value == TransportStatus.Ready) return // already confirmed by traffic
         val google = CookieInjector.probeGoogleSession()
         val stitch = CookieInjector.probeStitchSession()
-        _status.value = when {
-            stitch == SessionSignal.SignedIn || google == SessionSignal.SignedIn ->
-                TransportStatus.Ready
-            else -> TransportStatus.Degraded
-        }
+        _status.value =
+            when {
+                stitch == SessionSignal.SignedIn || google == SessionSignal.SignedIn -> {
+                    TransportStatus.Ready
+                }
+
+                else -> {
+                    TransportStatus.Degraded
+                }
+            }
     }
 
     override fun start() {

@@ -82,45 +82,53 @@ fun AgentOrb(
 }
 
 @Composable
-private fun Orb(busy: Boolean, queued: Int, onClick: () -> Unit) {
+private fun Orb(
+    busy: Boolean,
+    queued: Int,
+    onClick: () -> Unit,
+) {
     val transition = rememberInfiniteTransition(label = "orb")
     val pulse by transition.animateFloat(
         initialValue = if (busy) 0.82f else 0.95f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(if (busy) 900 else 2600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(if (busy) 900 else 2600, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "pulse",
     )
 
     Box(contentAlignment = Alignment.Center) {
         // Outer glow halo.
         Box(
-            modifier = Modifier
-                .size(60.dp)
-                .scale(pulse)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(listOf(Voltage.copy(alpha = 0.45f), Color.Transparent)),
-                ),
+            modifier =
+                Modifier
+                    .size(60.dp)
+                    .scale(pulse)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(listOf(Voltage.copy(alpha = 0.45f), Color.Transparent)),
+                    ),
         )
         // Core.
         Box(
-            modifier = Modifier
-                .size(34.dp)
-                .scale(pulse)
-                .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Color.White, Voltage, VoltageDim)))
-                .clickable(onClick = onClick),
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .scale(pulse)
+                    .clip(CircleShape)
+                    .background(Brush.radialGradient(listOf(Color.White, Voltage, VoltageDim)))
+                    .clickable(onClick = onClick),
         )
         if (queued > 0) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(OrbQueued),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(OrbQueued),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -134,15 +142,20 @@ private fun Orb(busy: Boolean, queued: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun TaskPanel(recent: List<TaskEntry>, online: Boolean, queued: Int) {
+private fun TaskPanel(
+    recent: List<TaskEntry>,
+    online: Boolean,
+    queued: Int,
+) {
     Column(
-        modifier = Modifier
-            .padding(top = 8.dp)
-            .widthIn(min = 220.dp, max = 300.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.98f))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .padding(14.dp),
+        modifier =
+            Modifier
+                .padding(top = 8.dp)
+                .widthIn(min = 220.dp, max = 300.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.98f))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -151,10 +164,11 @@ private fun TaskPanel(recent: List<TaskEntry>, online: Boolean, queued: Int) {
                 modifier = Modifier.weight(1f),
             )
             Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(if (online) OrbDone else OrbQueued),
+                modifier =
+                    Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(if (online) OrbDone else OrbQueued),
             )
             Spacer(Modifier.width(6.dp))
             Text(
@@ -182,21 +196,23 @@ private fun TaskPanel(recent: List<TaskEntry>, online: Boolean, queued: Int) {
 
 @Composable
 private fun TaskRow(task: TaskEntry) {
-    val (dot, label) = when (task.status) {
-        TaskStatus.Queued -> OrbQueued to "queued"
-        TaskStatus.Running -> Voltage to "running"
-        TaskStatus.Done -> OrbDone to "done"
-        TaskStatus.Failed -> OrbFailed to "failed"
-    }
+    val (dot, label) =
+        when (task.status) {
+            TaskStatus.Queued -> OrbQueued to "queued"
+            TaskStatus.Running -> Voltage to "running"
+            TaskStatus.Done -> OrbDone to "done"
+            TaskStatus.Failed -> OrbFailed to "failed"
+        }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(dot),
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(dot),
         )
         Spacer(Modifier.width(10.dp))
         Text(

@@ -15,7 +15,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CanvasToolbarTest {
-
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -44,7 +43,10 @@ class CanvasToolbarTest {
                 CanvasToolbar(
                     selectedIds = listOf("node-1"),
                     onAction = { _, _ -> },
-                    onExport = { k, i -> kind = k; ids = i },
+                    onExport = { k, i ->
+                        kind = k
+                        ids = i
+                    },
                     figmaInstalled = true,
                 )
             }

@@ -7,17 +7,17 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import com.easyhooon.dari.data.DariPreferences
 import com.easyhooon.dari.data.MessageRepository
 import com.easyhooon.dari.data.local.DariDatabase
-import java.io.File
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.easyhooon.dari.interceptor.DefaultDariInterceptor
 import com.easyhooon.dari.notification.DariNotification
 import com.easyhooon.dari.shake.DariShakeManager
 import com.easyhooon.dari.ui.DariActivity
+import java.io.File
 
 /**
  * Singleton entry point for Dari.
@@ -25,7 +25,6 @@ import com.easyhooon.dari.ui.DariActivity
  */
 @SuppressLint("StaticFieldLeak")
 object Dari {
-
     internal lateinit var context: Context
         private set
 
@@ -47,27 +46,32 @@ object Dari {
      * Initializes Dari.
      * Automatically called by the library's internal Initializer.
      */
-    fun init(context: Context, config: DariConfig = DariConfig()) {
+    fun init(
+        context: Context,
+        config: DariConfig = DariConfig(),
+    ) {
         this.context = context.applicationContext
         this.config = config
 
         if (database == null) {
             database = DariDatabase.create(this.context)
-            repository = MessageRepository(
-                database = database!!,
-                maxEntries = config.maxEntries,
-                retentionPeriodMs = config.retentionPeriod?.inWholeMilliseconds,
-            )
+            repository =
+                MessageRepository(
+                    database = database!!,
+                    maxEntries = config.maxEntries,
+                    retentionPeriodMs = config.retentionPeriod?.inWholeMilliseconds,
+                )
         }
 
         // Guard re-initialization: DataStore throws IllegalStateException if a
         // second instance is created for the same file, which would happen on
         // any subsequent Dari.init() call (tests, double-startup, etc.).
         if (!::preferences.isInitialized) {
-            preferences = DariPreferences(
-                dataStore = createPreferenceDataStore(this.context),
-                defaultShakeToOpen = config.shakeToOpen,
-            )
+            preferences =
+                DariPreferences(
+                    dataStore = createPreferenceDataStore(this.context),
+                    defaultShakeToOpen = config.shakeToOpen,
+                )
         }
 
         if (config.showNotification) {
@@ -97,11 +101,12 @@ object Dari {
 
     private fun applyShakeToOpen(enabled: Boolean) {
         shakeManager?.unregister()
-        shakeManager = if (enabled) {
-            DariShakeManager(context).also { it.register() }
-        } else {
-            null
-        }
+        shakeManager =
+            if (enabled) {
+                DariShakeManager(context).also { it.register() }
+            } else {
+                null
+            }
     }
 
     private fun createPreferenceDataStore(context: Context): DataStore<Preferences> =
@@ -122,7 +127,11 @@ object Dari {
     /**
      * Adds a new message to the notification.
      */
-    internal fun postMessageNotification(handlerName: String, direction: MessageDirection, tag: String? = null) {
+    internal fun postMessageNotification(
+        handlerName: String,
+        direction: MessageDirection,
+        tag: String? = null,
+    ) {
         notification?.postMessage(handlerName, direction, tag)
     }
 
@@ -147,15 +156,18 @@ object Dari {
     /** Registers a dynamic shortcut shown on launcher long-press */
     private fun addDynamicShortcut() {
         try {
-            val intent = Intent(context, DariActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
-            }
-            val shortcut = ShortcutInfoCompat.Builder(context, "open_dari")
-                .setShortLabel("Open Dari")
-                .setLongLabel("Open Dari")
-                .setIcon(IconCompat.createWithResource(context, R.drawable.ic_dari))
-                .setIntent(intent)
-                .build()
+            val intent =
+                Intent(context, DariActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                }
+            val shortcut =
+                ShortcutInfoCompat
+                    .Builder(context, "open_dari")
+                    .setShortLabel("Open Dari")
+                    .setLongLabel("Open Dari")
+                    .setIcon(IconCompat.createWithResource(context, R.drawable.ic_dari))
+                    .setIntent(intent)
+                    .build()
 
             ShortcutManagerCompat.addDynamicShortcuts(context, listOf(shortcut))
         } catch (_: Exception) {

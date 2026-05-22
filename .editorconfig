@@ -14,3 +14,6 @@ ij_kotlin_allow_trailing_comma_on_call_site = true
 
 # Ktlint rules
 ktlint_function_naming_ignore_when_annotated_with = Composable
+# A file may be named after its primary function rather than a lone enum
+# (e.g. RouteDecision.kt holding routeDecision() + the RouteChoice enum).
+ktlint_standard_filename = disabled

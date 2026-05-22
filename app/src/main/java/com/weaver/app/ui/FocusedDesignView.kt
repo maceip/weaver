@@ -51,11 +51,12 @@ fun FocusedDesignView(
 ) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, node.id, node.thumb) {
         val thumb = node.thumb
-        value = if (thumb == null || bitmapCache == null) {
-            null
-        } else {
-            withContext(Dispatchers.IO) { bitmapCache.decode(thumb)?.asImageBitmap() }
-        }
+        value =
+            if (thumb == null || bitmapCache == null) {
+                null
+            } else {
+                withContext(Dispatchers.IO) { bitmapCache.decode(thumb)?.asImageBitmap() }
+            }
     }
 
     var scale by remember { mutableFloatStateOf(MIN_SCALE) }
@@ -67,42 +68,42 @@ fun FocusedDesignView(
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .pointerInput(node.id) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val nextScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
-                    scale = nextScale
-                    translation = if (nextScale == MIN_SCALE) Offset.Zero else translation + pan
-                }
-            }
-            .pointerInput(node.id) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        if (scale > MIN_SCALE) {
-                            scale = MIN_SCALE
-                            translation = Offset.Zero
-                        } else {
-                            scale = DOUBLE_TAP_SCALE
-                        }
-                    },
-                )
-            },
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .pointerInput(node.id) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val nextScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                        scale = nextScale
+                        translation = if (nextScale == MIN_SCALE) Offset.Zero else translation + pan
+                    }
+                }.pointerInput(node.id) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            if (scale > MIN_SCALE) {
+                                scale = MIN_SCALE
+                                translation = Offset.Zero
+                            } else {
+                                scale = DOUBLE_TAP_SCALE
+                            }
+                        },
+                    )
+                },
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = translation.x
-                    translationY = translation.y
-                }
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = translation.x
+                        translationY = translation.y
+                    }.clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
         ) {
             val current = bitmap
             if (current != null) {
@@ -129,12 +130,17 @@ fun FocusedDesignView(
 }
 
 @Composable
-fun SizeBadge(widthPx: Int, heightPx: Int, modifier: Modifier = Modifier) {
+fun SizeBadge(
+    widthPx: Int,
+    heightPx: Int,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primary)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(
             text = "$widthPx x $heightPx",

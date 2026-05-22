@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
  * [sent] records what the router routed to it; [emitOutbound] simulates the
  * backend pushing a Stitch event back.
  */
-class FakeTransport(override val id: String) : BridgeTransport {
+class FakeTransport(
+    override val id: String,
+) : BridgeTransport {
     private val _status = MutableStateFlow(TransportStatus.Idle)
     override val status: StateFlow<TransportStatus> = _status
 

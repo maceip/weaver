@@ -58,11 +58,13 @@ class RemoteSessionTransport(
     private var outboundSink: ((String) -> Unit)? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val client = OkHttpClient.Builder()
-        .pingInterval(20, TimeUnit.SECONDS)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.MILLISECONDS) // streaming socket — no read timeout
-        .build()
+    private val client =
+        OkHttpClient
+            .Builder()
+            .pingInterval(20, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.MILLISECONDS) // streaming socket — no read timeout
+            .build()
 
     private var webSocket: WebSocket? = null
     private var running = false
@@ -92,12 +94,14 @@ class RemoteSessionTransport(
             Log.w(TAG, "drop inbound — socket not ready")
             return
         }
-        val payload = runCatching { json.parseToJsonElement(payloadJson).jsonObject }
-            .getOrNull() ?: return
-        val frame = buildJsonObject {
-            put("kind", "inbound")
-            put("payload", payload)
-        }
+        val payload =
+            runCatching { json.parseToJsonElement(payloadJson).jsonObject }
+                .getOrNull() ?: return
+        val frame =
+            buildJsonObject {
+                put("kind", "inbound")
+                put("payload", payload)
+            }
         ws.send(frame.toString())
     }
 
@@ -128,31 +132,49 @@ class RemoteSessionTransport(
         }
     }
 
-    private inner class Listener(private val idToken: String) : WebSocketListener() {
-        override fun onOpen(webSocket: WebSocket, response: Response) {
-            val hello = buildJsonObject {
-                put("kind", "hello")
-                put("idToken", idToken)
-                put("deviceId", deviceId)
-            }
+    private inner class Listener(
+        private val idToken: String,
+    ) : WebSocketListener() {
+        override fun onOpen(
+            webSocket: WebSocket,
+            response: Response,
+        ) {
+            val hello =
+                buildJsonObject {
+                    put("kind", "hello")
+                    put("idToken", idToken)
+                    put("deviceId", deviceId)
+                }
             webSocket.send(hello.toString())
         }
 
-        override fun onMessage(webSocket: WebSocket, text: String) {
-            val frame = runCatching { json.parseToJsonElement(text).jsonObject }
-                .getOrNull() ?: return
+        override fun onMessage(
+            webSocket: WebSocket,
+            text: String,
+        ) {
+            val frame =
+                runCatching { json.parseToJsonElement(text).jsonObject }
+                    .getOrNull() ?: return
             when (frame["kind"]?.toString()?.trim('"')) {
                 "ready" -> {
                     attempt = 0
                     _status.value = TransportStatus.Ready
                     Log.i(TAG, "remote session ready: $frame")
                 }
+
                 "outbound" -> {
                     val payload = frame["payload"] as? JsonObject ?: return
                     outboundSink?.invoke(payload.toString())
                 }
-                "ping" -> webSocket.send("""{"kind":"pong"}""")
-                "pong" -> Unit
+
+                "ping" -> {
+                    webSocket.send("""{"kind":"pong"}""")
+                }
+
+                "pong" -> {
+                    Unit
+                }
+
                 "error" -> {
                     val fatal = frame["fatal"]?.toString() == "true"
                     Log.w(TAG, "remote error: $frame (fatal=$fatal)")
@@ -165,11 +187,19 @@ class RemoteSessionTransport(
             }
         }
 
-        override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+        override fun onClosing(
+            webSocket: WebSocket,
+            code: Int,
+            reason: String,
+        ) {
             webSocket.close(code, reason)
         }
 
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+        override fun onClosed(
+            webSocket: WebSocket,
+            code: Int,
+            reason: String,
+        ) {
             this@RemoteSessionTransport.webSocket = null
             if (running) {
                 _status.value = TransportStatus.Failed
@@ -177,7 +207,11 @@ class RemoteSessionTransport(
             }
         }
 
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        override fun onFailure(
+            webSocket: WebSocket,
+            t: Throwable,
+            response: Response?,
+        ) {
             Log.w(TAG, "websocket failure: ${t.message}")
             this@RemoteSessionTransport.webSocket = null
             _status.value = TransportStatus.Failed

@@ -19,16 +19,21 @@ import org.robolectric.RuntimeEnvironment
 /** Covers the offline buffering + flush behaviour added to Bridge. */
 @RunWith(RobolectricTestRunner::class)
 class BridgeOfflineTest {
-
     /** A transport whose readiness the test drives directly. */
-    private class FakeTransport(initial: TransportStatus) : BridgeTransport {
+    private class FakeTransport(
+        initial: TransportStatus,
+    ) : BridgeTransport {
         override val id = "fake"
         val statusFlow = MutableStateFlow(initial)
         override val status: StateFlow<TransportStatus> = statusFlow
         val sent = mutableListOf<String>()
+
         override fun setOutboundSink(sink: (String) -> Unit) = Unit
+
         override fun start() = Unit
+
         override fun stop() = Unit
+
         override fun sendInbound(payloadJson: String) {
             sent += payloadJson
         }
@@ -39,8 +44,11 @@ class BridgeOfflineTest {
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
     }
 
     // Unconfined: the transport-status collector runs synchronously, so a
