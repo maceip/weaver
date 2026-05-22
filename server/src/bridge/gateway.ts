@@ -1,8 +1,7 @@
 import type { WebSocket } from "ws";
 import { config } from "../config.js";
 import { AuthError, verifyIdToken } from "../auth/verifier.js";
-import type { ContextManager } from "../browser/contextManager.js";
-import type { StitchSession } from "../browser/stitchSession.js";
+import type { BridgeSession, SessionProvider } from "./sessionTypes.js";
 import {
   parseClientFrame,
   type BridgePayload,
@@ -25,11 +24,11 @@ export class BridgeGateway {
   /** socket -> teardown for its outbound subscription. */
   private readonly unsubscribe = new WeakMap<WebSocket, () => void>();
 
-  constructor(private readonly contexts: ContextManager) {}
+  constructor(private readonly contexts: SessionProvider) {}
 
   /** Wire up a freshly-accepted WebSocket. */
   handle(socket: WebSocket): void {
-    let bound: { identity: string; session: StitchSession; deviceId: string } | null = null;
+    let bound: { identity: string; session: BridgeSession; deviceId: string } | null = null;
     let alive = true;
 
     const send = (frame: ServerFrame): void => {
@@ -110,7 +109,7 @@ export class BridgeGateway {
     socket: WebSocket,
     send: (f: ServerFrame) => void,
     fail: (code: string, message: string, fatal: boolean) => void,
-  ): Promise<{ identity: string; session: StitchSession; deviceId: string } | null> {
+  ): Promise<{ identity: string; session: BridgeSession; deviceId: string } | null> {
     let identity: string;
     try {
       ({ identity } = await verifyIdToken(idToken));
@@ -120,7 +119,7 @@ export class BridgeGateway {
       return null;
     }
 
-    let session: StitchSession;
+    let session: BridgeSession;
     try {
       session = await this.contexts.sessionFor(identity);
     } catch (e) {
