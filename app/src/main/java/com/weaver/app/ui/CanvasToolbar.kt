@@ -2,6 +2,7 @@ package com.weaver.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -112,11 +114,22 @@ private fun SingleSelectActions(
         }
         Spacer(Modifier.width(4.dp))
 
-        IconButton(onClick = { exportOpen = true }) {
-            Icon(Icons.Filled.Upload, contentDescription = "Export")
+        Row(
+            modifier = Modifier
+                .testTag("canvasExportButton")
+                .clickable { exportOpen = true },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Upload, contentDescription = "Export", modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(4.dp))
+            Text("Export", style = MaterialTheme.typography.labelLarge)
         }
-        Spacer(Modifier.width(2.dp))
-        Text("Export", style = MaterialTheme.typography.labelLarge)
+        ExportSheet(
+            expanded = exportOpen,
+            figmaInstalled = figmaInstalled,
+            onPick = { kind -> exportOpen = false; onExport(kind, ids) },
+            onDismiss = { exportOpen = false },
+        )
         Spacer(Modifier.width(4.dp))
 
         IconButton(onClick = { onAction(CanvasAction.More, ids) }) {
@@ -124,14 +137,6 @@ private fun SingleSelectActions(
         }
         Spacer(Modifier.width(2.dp))
         Text("More", style = MaterialTheme.typography.labelLarge)
-    }
-
-    if (exportOpen) {
-        ExportSheet(
-            figmaInstalled = figmaInstalled,
-            onPick = { kind -> exportOpen = false; onExport(kind, ids) },
-            onDismiss = { exportOpen = false },
-        )
     }
 }
 

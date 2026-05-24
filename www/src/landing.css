@@ -1,0 +1,220 @@
+.landing {
+  --bg: #f4f5f7;
+  --ink: #0f1115;
+  --muted: #5c6370;
+  --purple: #7c3aed;
+  --violet: #5b21b6;
+  --cyan: #06b6d4;
+  --teal: #14b8a6;
+  --card: #ffffff;
+  --gradient: linear-gradient(90deg, var(--violet) 0%, var(--purple) 42%, var(--cyan) 100%);
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+}
+
+.landing-logo-mark {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  background: var(--gradient);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+}
+
+.landing-nav a {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: 1.25rem;
+  text-decoration: none;
+}
+
+.landing-nav a:hover {
+  color: var(--ink);
+}
+
+.landing-hero {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  text-align: center;
+}
+
+.landing-eyebrow {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--violet);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.landing-hero h1 {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin: 0 0 1rem;
+}
+
+.landing-hero p {
+  max-width: 40rem;
+  margin: 0 auto 2rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.landing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.85rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.landing-btn:hover {
+  transform: translateY(-1px);
+}
+
+.landing-btn-primary {
+  background: var(--gradient);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(91, 33, 182, 0.28);
+}
+
+.landing-btn-secondary {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid #d8dce3;
+}
+
+.landing-features {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5rem;
+}
+
+.landing-feature {
+  background: var(--card);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px rgba(15, 17, 21, 0.06);
+  overflow: hidden;
+}
+
+.landing-feature-head {
+  padding: 1.75rem 1.75rem 0;
+}
+
+.landing-feature-kicker {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 0 0.35rem;
+}
+
+.landing-feature-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.landing-feature-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 1.15rem;
+  border-radius: 0.75rem;
+  background: var(--gradient);
+  color: #fff;
+  margin-bottom: 0.85rem;
+}
+
+.landing-feature-banner strong {
+  font-size: 1.05rem;
+}
+
+.landing-feature-banner span {
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+.landing-feature-desc {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+  font-weight: 500;
+}
+
+.landing-feature-visual {
+  padding: 0;
+  background: transparent;
+}
+
+.landing-feature-visual--interactive {
+  overflow: visible;
+}
+
+.landing-footer {
+  border-top: 1px solid #e2e5eb;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.landing-footer a {
+  color: var(--purple);
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .landing-hero {
+    padding-top: 4.5rem;
+  }
+  .landing-feature-head {
+    padding: 2rem 2rem 0;
+  }
+  .landing-feature-visual {
+    padding: 1.5rem 1.75rem 2rem;
+  }
+}

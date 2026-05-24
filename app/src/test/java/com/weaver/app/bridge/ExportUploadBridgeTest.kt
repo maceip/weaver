@@ -19,15 +19,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
-/**
- * End-to-end coverage of the export + upload journey: a UI-equivalent
- * `Inbound` action driven through a real [Bridge] all the way to the wire
- * JSON the content script parses, the `Outbound.ExportComplete` path back to
- * the Compose event stream, and offline buffer-then-flush for both.
- */
+/** Bridge contract: export/upload inbounds, wire JSON, ExportComplete, and outbox flush. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-class ExportUploadE2eTest {
+class ExportUploadBridgeTest {
 
     /** A transport whose readiness the test drives; records the wire payloads. */
     private class RecordingTransport(initial: TransportStatus) : BridgeTransport {

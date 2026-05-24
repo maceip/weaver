@@ -1,4 +1,4 @@
-name: Documentation
+name: Website
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -7,12 +7,16 @@ on:
   push:
     branches: [main]
     paths:
+      - 'www/**'
       - 'documentation/**'
+      - 'design/**'
       - '.github/workflows/docs.yml'
   pull_request:
     branches: [main]
     paths:
+      - 'www/**'
       - 'documentation/**'
+      - 'design/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -22,16 +26,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: documentation
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,20 +39,30 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: documentation/package-lock.json
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            www/package-lock.json
+            documentation/package-lock.json
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build docs (static export)
+        working-directory: documentation
+        run: |
+          npm ci
+          npm run build
 
-      - name: Build
-        run: npm run build
+      - name: Build marketing site
+        working-directory: www
+        run: |
+          npm ci
+          mkdir -p public/docs
+          cp -R ../documentation/out/. public/docs/
+          npm run build
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: documentation/out
+          path: www/dist
 
   deploy:
     environment:

@@ -69,6 +69,12 @@ class Bridge(
 
     private var transport: BridgeTransport? = null
 
+    /** Last inbound JSON payloads from [send], for on-device golden tests only. */
+    private val inboundSentForInstrumentation = mutableListOf<String>()
+
+    internal fun inboundSentForInstrumentation(): List<String> =
+        synchronized(inboundSentForInstrumentation) { inboundSentForInstrumentation.toList() }
+
     // Production passes Dispatchers.Main so outbox flushes reach the WebView
     // transport on the right thread; unit tests fall back to the default.
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -167,6 +173,7 @@ class Bridge(
 
     fun send(message: Inbound) {
         val payload = json.encodeToString(message)
+        synchronized(inboundSentForInstrumentation) { inboundSentForInstrumentation += payload }
         interceptor?.onAppToWebRequest(message::class.simpleName ?: "inbound", null, payload)
         val pipe = transport
         if (pipe != null && pipe.status.value == TransportStatus.Ready) {

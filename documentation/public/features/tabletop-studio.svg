@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <style>
+      .h1{font-size:30px;font-weight:700;fill:#111}
+      .sub{font-size:14px;fill:#666}
+      .h2{font-size:20px;font-weight:700;fill:#fff}
+      .hsub{font-size:13px;fill:#cfe2ff}
+      .intent{font-size:15px;fill:#222;font-weight:600}
+      .panel{fill:#fff;stroke:#222;stroke-width:2}
+      .screen{fill:#fbfbfc;stroke:#222;stroke-width:1.5}
+      .block{fill:#e6e8eb}
+      .blockd{fill:#d2d6da}
+      .new{fill:#e8f1ff;stroke:#1f6feb;stroke-width:2}
+      .newsolid{fill:#1f6feb}
+      .nt{fill:#1f6feb;font-size:12px;font-weight:700}
+      .hinge{stroke:#9aa0a6;stroke-width:2;stroke-dasharray:5 4}
+      .at{font-size:13px;font-weight:700;fill:#111}
+      .ad{font-size:12.5px;fill:#444}
+      .lead{stroke:#9aa0a6;stroke-width:1;fill:none}
+      .cap{font-size:12.5px;fill:#555;font-weight:600}
+    </style>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#1f6feb"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="720" fill="#f7f7f8"/>
+  <text x="40" y="46" class="h1">Weaver · Foldable Features</text>
+  <text x="40" y="70" class="sub">Wireframe 1 of 3 — Tabletop Studio. Low-fidelity layout intent. Blue = new elements.</text>
+  <line x1="40" y1="86" x2="960" y2="86" stroke="#dcdfe3"/>
+
+  <g transform="translate(0,110)">
+    <rect x="40" y="0" width="920" height="46" rx="10" class="newsolid"/>
+    <text x="62" y="30" class="h2">01 — Tabletop Studio</text>
+    <text x="938" y="29" text-anchor="end" class="hsub">posture: half-open · horizontal hinge</text>
+    <text x="40" y="80" class="intent">Top panel becomes the canvas; the bottom flat panel becomes a physical control deck.</text>
+
+    <!-- device -->
+    <g transform="translate(110,110)">
+      <rect x="0" y="0" width="340" height="470" rx="20" class="panel"/>
+      <rect x="16" y="16" width="308" height="190" rx="8" class="screen"/>
+      <rect x="34" y="34" width="180" height="18" class="blockd"/>
+      <rect x="34" y="64" width="272" height="46" class="block"/>
+      <rect x="34" y="118" width="272" height="36" class="block"/>
+      <rect x="34" y="166" width="88" height="20" class="blockd"/>
+      <rect x="0" y="220" width="340" height="20" fill="#e3e4e7"/>
+      <line x1="0" y1="230" x2="340" y2="230" class="hinge"/>
+      <text x="24" y="262" class="nt">VERSION FILMSTRIP</text>
+      <g>
+        <rect x="24" y="270" width="42" height="48" rx="4" class="new"/>
+        <rect x="86" y="270" width="42" height="48" rx="4" class="newsolid"/>
+        <rect x="148" y="270" width="42" height="48" rx="4" class="new"/>
+        <rect x="210" y="270" width="42" height="48" rx="4" class="new"/>
+        <rect x="272" y="270" width="42" height="48" rx="4" class="new"/>
+        <text x="107" y="299" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">v4</text>
+      </g>
+      <path d="M107,268 C107,225 150,210 168,194" class="lead" stroke="#1f6feb" stroke-width="1.6" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+      <text x="120" y="250" class="nt">drag up</text>
+      <rect x="24" y="338" width="248" height="34" rx="17" class="new"/>
+      <text x="40" y="359" font-size="12" fill="#1f6feb">Describe a change…</text>
+      <circle cx="298" cy="355" r="16" class="newsolid"/>
+      <path d="M292,361 L298,349 L304,361 Z" fill="#fff"/>
+      <circle cx="42" cy="404" r="9" fill="#fff" stroke="#666"/>
+      <circle cx="74" cy="404" r="9" fill="#fff" stroke="#666"/>
+      <circle cx="106" cy="404" r="9" fill="#fff" stroke="#666"/>
+      <circle cx="138" cy="404" r="9" fill="#fff" stroke="#666"/>
+      <circle cx="296" cy="408" r="28" fill="#d6e6ff"/>
+      <circle cx="296" cy="408" r="17" class="newsolid"/>
+    </g>
+
+    <!-- side-profile glyph -->
+    <g transform="translate(54,150)">
+      <path d="M0,70 L0,8 M0,70 L40,70" stroke="#888" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="-4" y="92" class="cap" font-size="11">tabletop prop</text>
+    </g>
+
+    <!-- annotations -->
+    <g>
+      <line x1="505" y1="200" x2="452" y2="223" class="lead"/>
+      <text x="512" y="190" class="at">Canvas — above the hinge</text>
+      <text x="512" y="208" class="ad">The generated design, propped toward you. Pinch-zoom</text>
+      <text x="512" y="224" class="ad">transform is re-clamped when the layout splits.</text>
+
+      <line x1="505" y1="318" x2="452" y2="340" class="lead"/>
+      <text x="512" y="294" class="at">Hinge — occluded seam</text>
+      <text x="512" y="312" class="ad">No content or touch targets here. Split layouts at the</text>
+      <text x="512" y="328" class="ad">reported hinge bounds, never at height / 2.</text>
+
+      <line x1="505" y1="408" x2="452" y2="424" class="lead"/>
+      <text x="512" y="384" class="at">Version filmstrip</text>
+      <text x="512" y="402" class="ad">Durable thumbnails from VersionHistory. Drag one up</text>
+      <text x="512" y="418" class="ad">onto the canvas → preview · revert · branch.</text>
+
+      <line x1="505" y1="486" x2="452" y2="468" class="lead"/>
+      <text x="512" y="462" class="at">Control deck + IME</text>
+      <text x="512" y="480" class="ad">Composer, tools and orb re-parent here. Tapping the</text>
+      <text x="512" y="496" class="ad">composer floats it up — the keyboard would cover the deck.</text>
+
+      <line x1="505" y1="540" x2="452" y2="528" class="lead"/>
+      <text x="512" y="534" class="at">Agent orb</text>
+      <text x="512" y="552" class="ad">On the deck it has room for richer progress than the overlay.</text>
+    </g>
+  </g>
+</svg>

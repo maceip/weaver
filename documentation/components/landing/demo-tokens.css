@@ -1,0 +1,71 @@
+.demo {
+  --demo-ink: #0f1115;
+  --demo-muted: #5c6370;
+  --demo-line: #d8dce3;
+  --demo-hinge: #9aa0a6;
+  --demo-purple: #7c3aed;
+  --demo-violet: #5b21b6;
+  --demo-cyan: #06b6d4;
+  --demo-blue: #3b82f6;
+  --demo-gradient: linear-gradient(90deg, var(--demo-violet) 0%, var(--demo-purple) 45%, var(--demo-cyan) 100%);
+  --demo-space-a: linear-gradient(135deg, #2d1b69 0%, #6b21a8 35%, #1e1b4b 70%, #0f172a 100%);
+  --demo-space-b: linear-gradient(135deg, #0e7490 0%, #06b6d4 40%, #164e63 75%, #0f172a 100%);
+  --demo-device-bg: #ffffff;
+  --demo-device-border: #1a1d24;
+  --demo-deck: #f0f2f5;
+  --demo-ui-dark: #12151c;
+  --demo-accent-glow: rgba(124, 58, 237, 0.45);
+  width: 100%;
+  font-size: clamp(0.65rem, 1.4vw, 0.875rem);
+}
+
+.demo-shell__resize {
+  resize: both;
+  overflow: auto;
+  min-width: 280px;
+  min-height: 320px;
+  max-width: 100%;
+  width: 100%;
+  height: min(520px, 70vh);
+  padding: clamp(1rem, 3vw, 2rem);
+  background: linear-gradient(180deg, #fafbfc 0%, #e8ecf1 100%);
+  border-radius: 0 0 1rem 1rem;
+  container-type: size;
+  position: relative;
+}
+
+.demo-shell__grip {
+  position: sticky;
+  float: right;
+  bottom: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, transparent 50%, var(--demo-purple) 50%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.demo-shell__hint {
+  margin: 0.5rem 1rem 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--demo-muted);
+}
+
+.demo-stage {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.demo-caption {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
+  font-weight: 600;
+  color: var(--demo-muted);
+}

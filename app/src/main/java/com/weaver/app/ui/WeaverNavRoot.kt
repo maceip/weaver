@@ -25,6 +25,7 @@ import android.content.Context
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -347,6 +348,7 @@ private fun FocusedPane(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .zIndex(2f)
                     .padding(top = 12.dp),
             ) {
                 CanvasToolbar(

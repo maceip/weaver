@@ -17,7 +17,7 @@ import org.junit.Test
  * (always authenticated), and circuit-breaks a flapping backend.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class BridgeRouterE2eTest {
+class BridgeRouterTest {
 
     /** Build a router wired to the test scope + virtual clock, already started. */
     private fun routerOf(

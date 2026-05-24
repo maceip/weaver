@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Weaver Stitch cookie export",
+  "version": "1.0.0",
+  "description": "Export Google/Stitch session cookies as JSON for Weaver Android WebView restore.",
+  "permissions": ["cookies", "downloads"],
+  "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.withgoogle.com/*",
+    "*://*.appspot.com/*"
+  ],
+  "action": {
+    "default_title": "Export Weaver cookies",
+    "default_popup": "popup.html"
+  }
+}

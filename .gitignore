@@ -57,6 +57,9 @@ debug.keystore
 # Secrets Properties
 secrets.properties
 
+# Exported browser cookies (never commit)
+.local-secrets/
+
 # report module
 /report/*
 

@@ -5,7 +5,7 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/dari',
+  basePath: '/weaver',
   images: {
     unoptimized: true,
   },

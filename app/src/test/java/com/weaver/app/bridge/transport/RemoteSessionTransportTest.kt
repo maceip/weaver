@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit.SECONDS
  * the actual upgrade, the hello handshake, frame parsing, the status machine,
  * and reconnect — nothing about the socket is mocked.
  */
-class RemoteSessionTransportE2eTest {
+class RemoteSessionTransportTest {
 
     private val json = Json { ignoreUnknownKeys = true }
     private var server: MockWebServer? = null

@@ -129,6 +129,11 @@ class MainActivity : ComponentActivity() {
             visibility = View.VISIBLE
         }
         hiddenHost.addView(webView)
+        // Pre-warm WebView must not steal touches from the Compose UI above it.
+        hiddenHost.isClickable = false
+        hiddenHost.isFocusable = false
+        webView.isClickable = false
+        webView.isFocusable = false
 
         // Bootstrap auth from persisted account (if any) before the first load,
         // otherwise load anonymously so we have a warm renderer ready to reload
@@ -189,6 +194,10 @@ class MainActivity : ComponentActivity() {
         }
         if (uris.isNotEmpty()) fileChooser.ingestUris(uris)
     }
+
+    /** Golden-path instrumentation drives the live [Bridge] on this activity. */
+    internal val instrumentationBridge: Bridge
+        get() = bridge
 
     override fun onDestroy() {
         webViewHost.destroy()

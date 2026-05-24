@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font: 13px system-ui, sans-serif; margin: 12px; width: 320px; }
+      button { width: 100%; padding: 8px; margin: 6px 0; cursor: pointer; }
+      pre { font-size: 11px; max-height: 120px; overflow: auto; background: #f4f4f4; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <p>Exports session cookies for Stitch / Google accounts (same domains as Weaver).</p>
+    <button id="export">Export JSON</button>
+    <button id="copy">Copy to clipboard</button>
+    <pre id="status">Ready.</pre>
+    <script src="popup.js"></script>
+  </body>
+</html>
