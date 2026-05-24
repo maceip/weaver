@@ -111,12 +111,30 @@ class PixelFoldShowtime extends HTMLElement {
           display: block;
           position: relative;
           color: #15181d;
-          min-height: 640svh;
+          min-height: 280svh;
           background:
             radial-gradient(circle at 18% 16%, rgba(255,255,255,0.86), rgba(255,255,255,0) 24rem),
             radial-gradient(circle at 82% 70%, rgba(153,169,184,0.45), rgba(153,169,184,0) 32rem),
             linear-gradient(145deg, #eef1f4 0%, #c7cfd7 44%, #f4f6f7 100%);
           overflow: clip;
+        }
+
+        @media (min-width: 540px) {
+          :host:not([data-error]) {
+            min-height: 420svh;
+          }
+        }
+
+        @media (min-width: 768px) {
+          :host:not([data-error]) {
+            min-height: 520svh;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          :host:not([data-error]) {
+            min-height: 640svh;
+          }
         }
 
         :host([data-error]) {

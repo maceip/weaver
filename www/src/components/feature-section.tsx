@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Reveal } from './reveal';
 
 type FeatureSectionProps = {
   index: string;
@@ -7,6 +8,7 @@ type FeatureSectionProps = {
   meta: string;
   description: string;
   children: ReactNode;
+  revealDelay?: number;
 };
 
 export function FeatureSection({
@@ -16,23 +18,26 @@ export function FeatureSection({
   meta,
   description,
   children,
+  revealDelay = 0,
 }: FeatureSectionProps) {
   return (
-    <section className="landing-feature" id={title.toLowerCase().replace(/\s+/g, '-')}>
-      <div className="landing-feature-head">
-        <p className="landing-feature-kicker">
-          {subtitle} · <span className="landing-feature-series">Stitch foldables</span>
-        </p>
-        <h2 className="landing-feature-title">{title}</h2>
-        <div className="landing-feature-banner">
-          <strong>
-            {index} — {title}
-          </strong>
-          <span>{meta}</span>
+    <Reveal delay={revealDelay}>
+      <section className="landing-feature" id={title.toLowerCase().replace(/\s+/g, '-')}>
+        <div className="landing-feature-head">
+          <p className="landing-feature-kicker">
+            {subtitle} · <span className="landing-feature-series">Stitch foldables</span>
+          </p>
+          <h2 className="landing-feature-title">{title}</h2>
+          <div className="landing-feature-banner">
+            <strong>
+              {index} — {title}
+            </strong>
+            <span>{meta}</span>
+          </div>
+          <p className="landing-feature-desc">{description}</p>
         </div>
-        <p className="landing-feature-desc">{description}</p>
-      </div>
-      <div className="landing-feature-visual landing-feature-visual--interactive">{children}</div>
-    </section>
+        <div className="landing-feature-visual landing-feature-visual--interactive">{children}</div>
+      </section>
+    </Reveal>
   );
 }

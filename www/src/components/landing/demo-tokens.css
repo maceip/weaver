@@ -22,16 +22,31 @@
 .demo-shell__resize {
   resize: both;
   overflow: auto;
-  min-width: 280px;
-  min-height: 320px;
+  min-width: min(100%, 260px);
+  min-height: 280px;
   max-width: 100%;
   width: 100%;
-  height: min(520px, 70vh);
-  padding: clamp(1rem, 3vw, 2rem);
+  height: min(480px, 62vh);
+  padding: clamp(0.75rem, 2.5vw, 2rem);
   background: linear-gradient(180deg, #fafbfc 0%, #e8ecf1 100%);
   border-radius: 0 0 1rem 1rem;
   container-type: size;
   position: relative;
+}
+
+@media (min-width: 540px) {
+  .demo-shell__resize {
+    min-width: min(100%, 300px);
+    min-height: 320px;
+    height: min(520px, 68vh);
+  }
+}
+
+@media (min-width: 1024px) {
+  .demo-shell__resize {
+    min-height: 360px;
+    height: min(560px, 70vh);
+  }
 }
 
 .demo-shell__grip {
