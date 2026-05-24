@@ -10,7 +10,6 @@ import org.junit.Test
  * mapping before it silently no-ops on a real device.
  */
 class StitchContentScriptTest {
-
     private val source = StitchContentScript.source
 
     @Test

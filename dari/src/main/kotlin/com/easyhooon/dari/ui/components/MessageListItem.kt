@@ -45,16 +45,18 @@ internal fun MessageListItem(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        val (directionText, directionColor) = when (entry.direction) {
-            MessageDirection.WEB_TO_APP -> "W\u2192A" to Blue500
-            MessageDirection.APP_TO_WEB -> "A\u2192W" to Green500
-        }
+        val (directionText, directionColor) =
+            when (entry.direction) {
+                MessageDirection.WEB_TO_APP -> "W\u2192A" to Blue500
+                MessageDirection.APP_TO_WEB -> "A\u2192W" to Green500
+            }
         Text(
             text = directionText,
             fontSize = 18.sp,
@@ -81,19 +83,21 @@ internal fun MessageListItem(
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(BlueGrey400)
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(BlueGrey400)
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
             }
 
-            val statusText = when (entry.status) {
-                MessageStatus.IN_PROGRESS -> "IN PROGRESS"
-                MessageStatus.SUCCESS -> "SUCCESS"
-                MessageStatus.ERROR -> "ERROR"
-            }
+            val statusText =
+                when (entry.status) {
+                    MessageStatus.IN_PROGRESS -> "IN PROGRESS"
+                    MessageStatus.SUCCESS -> "SUCCESS"
+                    MessageStatus.ERROR -> "ERROR"
+                }
             val statusColor = entry.status.palette.onSurface
             Text(
                 text = statusText,
@@ -103,9 +107,10 @@ internal fun MessageListItem(
             )
 
             Row {
-                val time = listTimeFormatter.format(
-                    Instant.ofEpochMilli(entry.requestTimestamp).atZone(ZoneId.systemDefault()),
-                )
+                val time =
+                    listTimeFormatter.format(
+                        Instant.ofEpochMilli(entry.requestTimestamp).atZone(ZoneId.systemDefault()),
+                    )
                 Text(
                     text = time,
                     style = MaterialTheme.typography.bodySmall,
@@ -140,8 +145,9 @@ internal fun MessageListItem(
 private val listTimeFormatter: DateTimeFormatter
     get() = DateTimeFormatter.ofPattern("a h:mm:ss", Locale.getDefault())
 
-private fun formatSize(bytes: Int): String = when {
-    bytes < 1024 -> "$bytes B"
-    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
-    else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
-}
+private fun formatSize(bytes: Int): String =
+    when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
+        else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
+    }

@@ -7,7 +7,9 @@ import android.webkit.JavascriptInterface
  * than Bridge-coupled so the local WebView path can be wrapped by a transport
  * (see LocalWebViewTransport) and routed alongside the remote path.
  */
-class JsBridgeInterface(private val onPost: (String) -> Unit) {
+class JsBridgeInterface(
+    private val onPost: (String) -> Unit,
+) {
     @JavascriptInterface
     fun post(json: String) {
         onPost(json)

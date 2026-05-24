@@ -7,7 +7,6 @@ import org.junit.Test
 
 /** Exhaustive state-machine coverage for the router's circuit breaker. */
 class CircuitBreakerTest {
-
     private fun breaker() = CircuitBreaker(failureThreshold = 3, cooldownMs = 1_000L)
 
     @Test

@@ -18,7 +18,6 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class FocusedAnnotationsTest {
-
     @get:Rule
     val rule = createComposeRule()
 

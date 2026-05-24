@@ -27,22 +27,32 @@ data class TaskEntry(
  * floating agent orb. Persisted so a queued-while-offline prompt still shows
  * after a cold restart.
  */
-class TaskTracker(context: Context) {
+class TaskTracker(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private val _tasks = MutableStateFlow(load())
     val tasks: StateFlow<List<TaskEntry>> = _tasks.asStateFlow()
 
     /** Records a fired prompt. [queued] is true when buffered offline. */
-    fun submit(prompt: String, queued: Boolean): String {
-        val entry = TaskEntry(
-            id = UUID.randomUUID().toString(),
-            prompt = prompt,
-            status = if (queued) TaskStatus.Queued else TaskStatus.Running,
-            startedAt = System.currentTimeMillis(),
-        )
+    fun submit(
+        prompt: String,
+        queued: Boolean,
+    ): String {
+        val entry =
+            TaskEntry(
+                id = UUID.randomUUID().toString(),
+                prompt = prompt,
+                status = if (queued) TaskStatus.Queued else TaskStatus.Running,
+                startedAt = System.currentTimeMillis(),
+            )
         _tasks.update { (it + entry).takeLast(MAX) }
         persist()
         return entry.id

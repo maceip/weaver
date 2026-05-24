@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit.SECONDS
  * and reconnect — nothing about the socket is mocked.
  */
 class RemoteSessionTransportTest {
-
     private val json = Json { ignoreUnknownKeys = true }
     private var server: MockWebServer? = null
     private var transport: RemoteSessionTransport? = null
@@ -46,17 +45,22 @@ class RemoteSessionTransportTest {
         @Volatile
         var socket: WebSocket? = null
 
-        override fun onOpen(webSocket: WebSocket, response: Response) {
+        override fun onOpen(
+            webSocket: WebSocket,
+            response: Response,
+        ) {
             socket = webSocket
             opened.countDown()
         }
 
-        override fun onMessage(webSocket: WebSocket, text: String) {
+        override fun onMessage(
+            webSocket: WebSocket,
+            text: String,
+        ) {
             received.add(text)
         }
 
-        fun take(): String =
-            requireNotNull(received.poll(3, SECONDS)) { "expected a frame from the client" }
+        fun take(): String = requireNotNull(received.poll(3, SECONDS)) { "expected a frame from the client" }
 
         fun send(frame: String) {
             requireNotNull(socket) { "server socket not open" }.send(frame)
@@ -91,7 +95,10 @@ class RemoteSessionTransportTest {
         }
 
     /** Poll the status flow until it reaches [expected] or time runs out. */
-    private fun awaitStatus(t: RemoteSessionTransport, expected: TransportStatus) {
+    private fun awaitStatus(
+        t: RemoteSessionTransport,
+        expected: TransportStatus,
+    ) {
         val deadline = System.currentTimeMillis() + 5_000
         while (System.currentTimeMillis() < deadline) {
             if (t.status.value == expected) return
@@ -162,7 +169,14 @@ class RemoteSessionTransportTest {
         val t = newTransport(bridgeUrl())
         t.start()
         assertTrue(end.opened.await(3, SECONDS))
-        assertEquals("hello", json.parseToJsonElement(end.take()).jsonObject["kind"]?.jsonPrimitive?.content)
+        assertEquals(
+            "hello",
+            json
+                .parseToJsonElement(end.take())
+                .jsonObject["kind"]
+                ?.jsonPrimitive
+                ?.content,
+        )
 
         // Not Ready yet — this must not be sent.
         t.sendInbound("""{"type":"submit_prompt","text":"too early"}""")

@@ -12,15 +12,17 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class OutboxTest {
-
     private lateinit var context: Context
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         // Each test starts from a clean prefs file.
-        context.getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
     }
 
     @Test

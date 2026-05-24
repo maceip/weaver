@@ -25,10 +25,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.weaver.app.bridge.CanvasTool
@@ -46,12 +46,13 @@ fun CanvasToolPalette(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .width(48.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
-            .padding(vertical = 8.dp),
+        modifier =
+            modifier
+                .width(48.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
+                .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -77,12 +78,13 @@ private fun ToolButton(
 ) {
     val active = tool == activeTool
     Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(
-                if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-            ),
+        modifier =
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(
+                    if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                ),
         contentAlignment = Alignment.Center,
     ) {
         IconButton(onClick = { onSelect(tool) }, modifier = Modifier.size(36.dp)) {

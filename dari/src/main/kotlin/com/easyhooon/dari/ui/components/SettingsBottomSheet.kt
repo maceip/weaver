@@ -65,9 +65,10 @@ internal fun SettingsBottomSheet(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
         ) {
             Text(
                 text = "Settings",
@@ -138,7 +139,10 @@ private fun SectionHeader(text: String) {
     )
 }
 
-private enum class DarkModeOption(val label: String, val value: Boolean?) {
+private enum class DarkModeOption(
+    val label: String,
+    val value: Boolean?,
+) {
     System(label = "System", value = null),
     Light(label = "Light", value = false),
     Dark(label = "Dark", value = true),
@@ -152,16 +156,18 @@ private fun DarkModeRow(
 ) {
     val selected = DarkModeOption.entries.first { it.value == darkMode }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Blue500.copy(alpha = 0.12f)),
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Blue500.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -186,10 +192,11 @@ private fun DarkModeRow(
                     SegmentedButton(
                         selected = option == selected,
                         onClick = { onDarkModeChange(option.value) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = DarkModeOption.entries.size,
-                        ),
+                        shape =
+                            SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = DarkModeOption.entries.size,
+                            ),
                     ) {
                         Text(option.label)
                     }
@@ -208,17 +215,19 @@ private fun SettingToggleRow(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onCheckedChange(!checked) }
+                .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Blue500.copy(alpha = 0.12f)),
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Blue500.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -247,10 +256,11 @@ private fun SettingToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Blue500,
-            ),
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Blue500,
+                ),
         )
     }
 }
@@ -264,17 +274,19 @@ private fun DestructiveActionRow(
 ) {
     val accent = MaterialTheme.colorScheme.error
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(accent.copy(alpha = 0.12f)),
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -305,11 +317,15 @@ private fun DestructiveActionRow(
 }
 
 @Composable
-private fun InfoRow(title: String, value: String) {
+private fun InfoRow(
+    title: String,
+    value: String,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -326,12 +342,17 @@ private fun InfoRow(title: String, value: String) {
 }
 
 @Composable
-private fun ClickableInfoRow(title: String, value: String, onClick: () -> Unit) {
+private fun ClickableInfoRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 24.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

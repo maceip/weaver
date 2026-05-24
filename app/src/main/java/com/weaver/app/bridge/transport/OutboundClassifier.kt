@@ -16,23 +16,31 @@ package com.weaver.app.bridge.transport
 internal object OutboundClassifier {
     private val typeRegex = Regex("\"type\"\\s*:\\s*\"([^\"]+)\"")
 
-    private val healthyTypes = setOf(
-        "nodes_updated",
-        "selection_changed",
-        "agent_log_updated",
-        "session_started",
-        "session_progress",
-    )
+    private val healthyTypes =
+        setOf(
+            "nodes_updated",
+            "selection_changed",
+            "agent_log_updated",
+            "session_started",
+            "session_progress",
+        )
 
     private val breakageCodes = setOf("selector_breakage", "canvas_missing")
 
     fun classify(outboundJson: String): TransportStatus? {
         val type = typeRegex.find(outboundJson)?.groupValues?.get(1) ?: return null
         return when {
-            type in healthyTypes -> TransportStatus.Ready
-            type == "error" && breakageCodes.any { outboundJson.contains(it) } ->
+            type in healthyTypes -> {
+                TransportStatus.Ready
+            }
+
+            type == "error" && breakageCodes.any { outboundJson.contains(it) } -> {
                 TransportStatus.Degraded
-            else -> null
+            }
+
+            else -> {
+                null
+            }
         }
     }
 }

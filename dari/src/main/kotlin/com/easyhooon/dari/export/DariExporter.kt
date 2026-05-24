@@ -18,13 +18,13 @@ import java.util.Date
 import java.util.Locale
 
 internal object DariExporter {
-
     @OptIn(ExperimentalSerializationApi::class)
-    private val prettyJson = Json {
-        prettyPrint = true
-        prettyPrintIndent = "  "
-        encodeDefaults = true
-    }
+    private val prettyJson =
+        Json {
+            prettyPrint = true
+            prettyPrintIndent = "  "
+            encodeDefaults = true
+        }
 
     private const val LOG_TAG = "DariExporter"
     private const val EXPORT_DIR = "dari_export"
@@ -33,14 +33,23 @@ internal object DariExporter {
     /** Safety cap for inline text share to stay below Android's Binder limit (~1MB). */
     private const val SHARE_TEXT_MAX_LENGTH = 100_000
 
-    suspend fun exportAndShare(context: Context, entries: List<MessageEntry>, format: ExportFormat) {
-        val file = withContext(Dispatchers.IO) {
-            writeExportFile(context, entries, format)
-        }
+    suspend fun exportAndShare(
+        context: Context,
+        entries: List<MessageEntry>,
+        format: ExportFormat,
+    ) {
+        val file =
+            withContext(Dispatchers.IO) {
+                writeExportFile(context, entries, format)
+            }
         shareFile(context, file, format)
     }
 
-    suspend fun exportAndShareSingle(context: Context, entry: MessageEntry, format: ExportFormat) {
+    suspend fun exportAndShareSingle(
+        context: Context,
+        entry: MessageEntry,
+        format: ExportFormat,
+    ) {
         exportAndShare(context, listOf(entry), format)
     }
 
@@ -53,17 +62,22 @@ internal object DariExporter {
      * transaction limit (~1MB) — for bulk exports, use [exportAndShare] with
      * [ExportFormat.TEXT] which goes through a `FileProvider` URI instead.
      */
-    fun shareSingleAsPlainText(context: Context, entry: MessageEntry) {
+    fun shareSingleAsPlainText(
+        context: Context,
+        entry: MessageEntry,
+    ) {
         val text = formatSingleEntry(entry)
-        val safeText = if (text.length > SHARE_TEXT_MAX_LENGTH) {
-            text.take(SHARE_TEXT_MAX_LENGTH) + "\n\n...[truncated for sharing]"
-        } else {
-            text
-        }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, safeText)
-        }
+        val safeText =
+            if (text.length > SHARE_TEXT_MAX_LENGTH) {
+                text.take(SHARE_TEXT_MAX_LENGTH) + "\n\n...[truncated for sharing]"
+            } else {
+                text
+            }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, safeText)
+            }
         context.startActivity(Intent.createChooser(intent, "Share Bridge Message"))
     }
 
@@ -84,77 +98,90 @@ internal object DariExporter {
         uri: Uri,
         entries: List<MessageEntry>,
         format: ExportFormat,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val content = when (format) {
-            ExportFormat.TEXT -> formatAsText(entries)
-            ExportFormat.JSON -> formatAsJson(entries)
-        }
-        try {
-            val stream = context.contentResolver.openOutputStream(uri)
-            if (stream == null) {
-                Log.w(LOG_TAG, "saveToUri: resolver returned null stream for $uri")
-                return@withContext false
+    ): Boolean =
+        withContext(Dispatchers.IO) {
+            val content =
+                when (format) {
+                    ExportFormat.TEXT -> formatAsText(entries)
+                    ExportFormat.JSON -> formatAsJson(entries)
+                }
+            try {
+                val stream = context.contentResolver.openOutputStream(uri)
+                if (stream == null) {
+                    Log.w(LOG_TAG, "saveToUri: resolver returned null stream for $uri")
+                    return@withContext false
+                }
+                stream.use { it.write(content.toByteArray(Charsets.UTF_8)) }
+                true
+            } catch (ioe: IOException) {
+                Log.e(LOG_TAG, "saveToUri: failed to write to $uri", ioe)
+                false
             }
-            stream.use { it.write(content.toByteArray(Charsets.UTF_8)) }
-            true
-        } catch (ioe: IOException) {
-            Log.e(LOG_TAG, "saveToUri: failed to write to $uri", ioe)
-            false
         }
-    }
 
     fun suggestedFilename(format: ExportFormat): String {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val extension = when (format) {
-            ExportFormat.TEXT -> "txt"
-            ExportFormat.JSON -> "json"
-        }
+        val extension =
+            when (format) {
+                ExportFormat.TEXT -> "txt"
+                ExportFormat.JSON -> "json"
+            }
         return "dari_export_$timestamp.$extension"
     }
 
-    fun mimeTypeFor(format: ExportFormat): String = when (format) {
-        ExportFormat.TEXT -> "text/plain"
-        ExportFormat.JSON -> "application/json"
-    }
+    fun mimeTypeFor(format: ExportFormat): String =
+        when (format) {
+            ExportFormat.TEXT -> "text/plain"
+            ExportFormat.JSON -> "application/json"
+        }
 
     private fun writeExportFile(
         context: Context,
         entries: List<MessageEntry>,
         format: ExportFormat,
     ): File {
-        val exportDir = File(context.cacheDir, EXPORT_DIR).apply {
-            if (!exists()) mkdirs()
-        }
+        val exportDir =
+            File(context.cacheDir, EXPORT_DIR).apply {
+                if (!exists()) mkdirs()
+            }
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val extension = when (format) {
-            ExportFormat.TEXT -> "txt"
-            ExportFormat.JSON -> "json"
-        }
+        val extension =
+            when (format) {
+                ExportFormat.TEXT -> "txt"
+                ExportFormat.JSON -> "json"
+            }
         // Use createTempFile so concurrent shares within the same second
         // don't overwrite a file that a previous share target is still reading.
         val file = File.createTempFile("dari_export_${timestamp}_", ".$extension", exportDir)
 
-        val content = when (format) {
-            ExportFormat.TEXT -> formatAsText(entries)
-            ExportFormat.JSON -> formatAsJson(entries)
-        }
+        val content =
+            when (format) {
+                ExportFormat.TEXT -> formatAsText(entries)
+                ExportFormat.JSON -> formatAsJson(entries)
+            }
         file.writeText(content, Charsets.UTF_8)
         return file
     }
 
-    private fun shareFile(context: Context, file: File, format: ExportFormat) {
+    private fun shareFile(
+        context: Context,
+        file: File,
+        format: ExportFormat,
+    ) {
         val authority = "${context.packageName}$AUTHORITY_SUFFIX"
         val uri = FileProvider.getUriForFile(context, authority, file)
-        val mimeType = when (format) {
-            ExportFormat.TEXT -> "text/plain"
-            ExportFormat.JSON -> "application/json"
-        }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = mimeType
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val mimeType =
+            when (format) {
+                ExportFormat.TEXT -> "text/plain"
+                ExportFormat.JSON -> "application/json"
+            }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(Intent.createChooser(intent, "Export Bridge Messages"))
     }
 
@@ -177,10 +204,11 @@ internal object DariExporter {
         entry: MessageEntry,
         dateFormat: SimpleDateFormat = SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.getDefault()),
     ): String {
-        val direction = when (entry.direction) {
-            MessageDirection.WEB_TO_APP -> "Web \u2192 App"
-            MessageDirection.APP_TO_WEB -> "App \u2192 Web"
-        }
+        val direction =
+            when (entry.direction) {
+                MessageDirection.WEB_TO_APP -> "Web \u2192 App"
+                MessageDirection.APP_TO_WEB -> "App \u2192 Web"
+            }
         val requestSize = entry.requestData?.toByteArray(Charsets.UTF_8)?.size ?: 0
         val responseSize = entry.responseData?.toByteArray(Charsets.UTF_8)?.size ?: 0
 
@@ -217,17 +245,22 @@ internal object DariExporter {
         if (jsonString == null) return null
         return try {
             val element = prettyJson.parseToJsonElement(jsonString)
-            prettyJson.encodeToString(kotlinx.serialization.json.JsonElement.serializer(), element)
+            prettyJson.encodeToString(
+                kotlinx.serialization.json.JsonElement
+                    .serializer(),
+                element,
+            )
         } catch (_: Exception) {
             jsonString
         }
     }
 
-    private fun formatSize(bytes: Int): String = when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
-        else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
-    }
+    private fun formatSize(bytes: Int): String =
+        when {
+            bytes < 1024 -> "$bytes B"
+            bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024f)} KB"
+            else -> "${"%.1f".format(bytes / (1024f * 1024f))} MB"
+        }
 }
 
 internal enum class ExportFormat {

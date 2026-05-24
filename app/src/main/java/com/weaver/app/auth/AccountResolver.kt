@@ -9,8 +9,9 @@ private const val KEY_ACCOUNT_ID = "account_id"
 private const val KEY_EMAIL = "email"
 private const val KEY_DISPLAY = "display"
 
-class AccountResolver(context: Context) {
-
+class AccountResolver(
+    context: Context,
+) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 

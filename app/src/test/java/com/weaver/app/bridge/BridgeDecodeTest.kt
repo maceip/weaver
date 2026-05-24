@@ -15,15 +15,18 @@ import org.junit.Test
  * drifts from the Kotlin model, these fail.
  */
 class BridgeDecodeTest {
-
     /** Captures whatever Bridge.send pushes, so we can assert the wire JSON. */
     private class CapturingTransport : BridgeTransport {
         override val id = "capture"
         override val status: StateFlow<TransportStatus> = MutableStateFlow(TransportStatus.Ready)
         val sent = mutableListOf<String>()
+
         override fun setOutboundSink(sink: (String) -> Unit) = Unit
+
         override fun start() = Unit
+
         override fun stop() = Unit
+
         override fun sendInbound(payloadJson: String) {
             sent += payloadJson
         }

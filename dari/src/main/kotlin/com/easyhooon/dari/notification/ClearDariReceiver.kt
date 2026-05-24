@@ -9,7 +9,10 @@ import com.easyhooon.dari.Dari
  * BroadcastReceiver that clears messages when the notification's Clear button is pressed.
  */
 internal class ClearDariReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent?) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent?,
+    ) {
         Dari.clear()
     }
 }

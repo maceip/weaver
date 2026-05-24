@@ -71,14 +71,18 @@ fun CanvasToolbar(
     if (selectedIds.isEmpty()) return
     val multi = selectedIds.size > 1
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(28.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        if (multi) MultiSelectActions(selectedIds, onAction)
-        else SingleSelectActions(selectedIds.first(), onAction, onExport, figmaInstalled)
+        if (multi) {
+            MultiSelectActions(selectedIds, onAction)
+        } else {
+            SingleSelectActions(selectedIds.first(), onAction, onExport, figmaInstalled)
+        }
     }
 }
 
@@ -98,19 +102,22 @@ private fun SingleSelectActions(
     Row(verticalAlignment = Alignment.CenterVertically) {
         ToolbarButton(Icons.Filled.AutoAwesome, "Generate", onClick = { generateOpen = true })
         GenerateMenuSingle(generateOpen, onDismiss = { generateOpen = false }) {
-            generateOpen = false; onAction(it, ids)
+            generateOpen = false
+            onAction(it, ids)
         }
         Spacer(Modifier.width(4.dp))
 
         ToolbarButton(Icons.Filled.Edit, "Modify", onClick = { modifyOpen = true })
         ModifyMenu(modifyOpen, onDismiss = { modifyOpen = false }) {
-            modifyOpen = false; onAction(it, ids)
+            modifyOpen = false
+            onAction(it, ids)
         }
         Spacer(Modifier.width(4.dp))
 
         ToolbarButton(Icons.Filled.RemoveRedEye, "Preview", onClick = { previewOpen = true })
         PreviewMenu(previewOpen, onDismiss = { previewOpen = false }) {
-            previewOpen = false; onAction(it, ids)
+            previewOpen = false
+            onAction(it, ids)
         }
         Spacer(Modifier.width(4.dp))
 
@@ -141,13 +148,17 @@ private fun SingleSelectActions(
 }
 
 @Composable
-private fun MultiSelectActions(ids: List<String>, onAction: (CanvasAction, List<String>) -> Unit) {
+private fun MultiSelectActions(
+    ids: List<String>,
+    onAction: (CanvasAction, List<String>) -> Unit,
+) {
     var generateOpen by remember { mutableStateOf(false) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         ToolbarButton(Icons.Filled.AutoAwesome, "Generate", onClick = { generateOpen = true })
         GenerateMenuMulti(generateOpen, onDismiss = { generateOpen = false }) {
-            generateOpen = false; onAction(it, ids)
+            generateOpen = false
+            onAction(it, ids)
         }
         Spacer(Modifier.width(8.dp))
 
@@ -173,13 +184,18 @@ private fun MultiSelectActions(ids: List<String>, onAction: (CanvasAction, List<
 }
 
 @Composable
-private fun ToolbarButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun ToolbarButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-            .padding(horizontal = 10.dp),
+        modifier =
+            Modifier
+                .height(36.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +211,11 @@ private fun ToolbarButton(icon: ImageVector, label: String, onClick: () -> Unit)
 }
 
 @Composable
-private fun GenerateMenuSingle(expanded: Boolean, onDismiss: () -> Unit, onPick: (CanvasAction) -> Unit) {
+private fun GenerateMenuSingle(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (CanvasAction) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         menuItem(Icons.Filled.PlayCircleOutline, "Instant Prototype", badge = "NEW") { onPick(CanvasAction.InstantPrototype) }
         menuItem(Icons.Filled.LibraryAdd, "Variations", shortcut = "⇧V") { onPick(CanvasAction.Variations) }
@@ -208,7 +228,11 @@ private fun GenerateMenuSingle(expanded: Boolean, onDismiss: () -> Unit, onPick:
 }
 
 @Composable
-private fun GenerateMenuMulti(expanded: Boolean, onDismiss: () -> Unit, onPick: (CanvasAction) -> Unit) {
+private fun GenerateMenuMulti(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (CanvasAction) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         menuItem(Icons.Filled.PlayCircleOutline, "Instant Prototype", badge = "NEW") { onPick(CanvasAction.InstantPrototype) }
         menuItem(Icons.Filled.PhoneAndroid, "Mobile App Versions") { onPick(CanvasAction.MobileAppVersion) }
@@ -216,7 +240,11 @@ private fun GenerateMenuMulti(expanded: Boolean, onDismiss: () -> Unit, onPick: 
 }
 
 @Composable
-private fun ModifyMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (CanvasAction) -> Unit) {
+private fun ModifyMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (CanvasAction) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         menuItem(Icons.Filled.Edit, "Edit", shortcut = "E") { onPick(CanvasAction.Edit) }
         menuItem(Icons.Filled.RateReview, "Annotate", shortcut = "A") { onPick(CanvasAction.Annotate) }
@@ -225,7 +253,11 @@ private fun ModifyMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (Canvas
 }
 
 @Composable
-private fun PreviewMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (CanvasAction) -> Unit) {
+private fun PreviewMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (CanvasAction) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         menuItem(Icons.Filled.OpenInNew, "New Tab", shortcut = "⇧P") { onPick(CanvasAction.PreviewNewTab) }
         menuItem(Icons.Filled.QrCode, "Show QR Code") { onPick(CanvasAction.PreviewQrCode) }
@@ -251,10 +283,11 @@ private fun menuItem(
                 if (badge != null) {
                     Spacer(Modifier.width(8.dp))
                     Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier =
+                            Modifier
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
                     ) {
                         Text(
                             badge,
@@ -265,9 +298,10 @@ private fun menuItem(
                 }
             }
         },
-        trailingIcon = shortcut?.let {
-            { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        },
+        trailingIcon =
+            shortcut?.let {
+                { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            },
         onClick = onClick,
     )
 }

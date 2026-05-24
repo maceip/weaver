@@ -23,31 +23,33 @@ internal data class MessageEntity(
     val responseTimestamp: Long? = null,
 )
 
-internal fun MessageEntry.toEntity(): MessageEntity = MessageEntity(
-    requestId = requestId,
-    handlerName = handlerName,
-    direction = direction,
-    tag = tag,
-    requestData = requestData,
-    responseData = responseData,
-    requestDataTruncated = requestDataTruncated,
-    responseDataTruncated = responseDataTruncated,
-    status = status,
-    requestTimestamp = requestTimestamp,
-    responseTimestamp = responseTimestamp,
-)
+internal fun MessageEntry.toEntity(): MessageEntity =
+    MessageEntity(
+        requestId = requestId,
+        handlerName = handlerName,
+        direction = direction,
+        tag = tag,
+        requestData = requestData,
+        responseData = responseData,
+        requestDataTruncated = requestDataTruncated,
+        responseDataTruncated = responseDataTruncated,
+        status = status,
+        requestTimestamp = requestTimestamp,
+        responseTimestamp = responseTimestamp,
+    )
 
-internal fun MessageEntity.toMessageEntry(): MessageEntry = MessageEntry(
-    id = id,
-    requestId = requestId,
-    handlerName = handlerName,
-    direction = direction,
-    tag = tag,
-    requestData = requestData,
-    responseData = responseData,
-    requestDataTruncated = requestDataTruncated,
-    responseDataTruncated = responseDataTruncated,
-    status = status,
-    requestTimestamp = requestTimestamp,
-    responseTimestamp = responseTimestamp,
-)
+internal fun MessageEntity.toMessageEntry(): MessageEntry =
+    MessageEntry(
+        id = id,
+        requestId = requestId,
+        handlerName = handlerName,
+        direction = direction,
+        tag = tag,
+        requestData = requestData,
+        responseData = responseData,
+        requestDataTruncated = requestDataTruncated,
+        responseDataTruncated = responseDataTruncated,
+        status = status,
+        requestTimestamp = requestTimestamp,
+        responseTimestamp = responseTimestamp,
+    )

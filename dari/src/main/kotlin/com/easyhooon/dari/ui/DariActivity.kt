@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,8 +33,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,10 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -63,12 +60,14 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.MessageEntry
 import com.easyhooon.dari.MessageStatus
 import com.easyhooon.dari.export.DariExporter
 import com.easyhooon.dari.export.ExportFormat
-import androidx.compose.foundation.isSystemInDarkTheme
 import com.easyhooon.dari.ui.components.MessageListItem
 import com.easyhooon.dari.ui.components.SettingsBottomSheet
 import com.easyhooon.dari.ui.theme.ApplyDariSystemBars
@@ -76,13 +75,13 @@ import com.easyhooon.dari.ui.theme.Blue500
 import com.easyhooon.dari.ui.theme.DariTheme
 import com.easyhooon.dari.ui.theme.DariTopBarColors
 import com.easyhooon.dari.ui.theme.palette
+import kotlinx.coroutines.launch
 
 /**
  * Activity displaying the list of bridge messages.
  * Accessed by tapping the notification or launching directly.
  */
 class DariActivity : ComponentActivity() {
-
     override fun onStart() {
         super.onStart()
         isVisible = true
@@ -93,13 +92,14 @@ class DariActivity : ComponentActivity() {
         isVisible = false
     }
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        if (isGranted) {
-            Dari.showNotification()
+    private val notificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            if (isGranted) {
+                Dari.showNotification()
+            }
         }
-    }
 
     // Entries captured at launch time, consumed in the SAF callback.
     // Two launchers are registered (one per format) so document providers
@@ -107,15 +107,20 @@ class DariActivity : ComponentActivity() {
     // registration, not per-launch.
     private var pendingSaveEntries: List<MessageEntry> = emptyList()
 
-    private val saveTextDocumentLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.TEXT)),
-    ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.TEXT) }
+    private val saveTextDocumentLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.TEXT)),
+        ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.TEXT) }
 
-    private val saveJsonDocumentLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.JSON)),
-    ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.JSON) }
+    private val saveJsonDocumentLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.CreateDocument(DariExporter.mimeTypeFor(ExportFormat.JSON)),
+        ) { uri: Uri? -> handleSaveResult(uri, ExportFormat.JSON) }
 
-    private fun handleSaveResult(uri: Uri?, format: ExportFormat) {
+    private fun handleSaveResult(
+        uri: Uri?,
+        format: ExportFormat,
+    ) {
         val entries = pendingSaveEntries
         pendingSaveEntries = emptyList()
         if (uri == null || entries.isEmpty()) return
@@ -124,13 +129,17 @@ class DariActivity : ComponentActivity() {
         }
     }
 
-    internal fun launchSave(entries: List<MessageEntry>, format: ExportFormat) {
+    internal fun launchSave(
+        entries: List<MessageEntry>,
+        format: ExportFormat,
+    ) {
         if (entries.isEmpty()) return
         pendingSaveEntries = entries
-        val launcher = when (format) {
-            ExportFormat.TEXT -> saveTextDocumentLauncher
-            ExportFormat.JSON -> saveJsonDocumentLauncher
-        }
+        val launcher =
+            when (format) {
+                ExportFormat.TEXT -> saveTextDocumentLauncher
+                ExportFormat.JSON -> saveJsonDocumentLauncher
+            }
         launcher.launch(DariExporter.suggestedFilename(format))
     }
 
@@ -176,13 +185,15 @@ class DariActivity : ComponentActivity() {
 
                 val availableTags = entries.mapNotNull { it.tag }.distinct()
 
-                val filteredEntries = entries.reversed().filter { entry ->
-                    val matchesSearch = searchQuery.isBlank() ||
-                        entry.handlerName.contains(searchQuery, ignoreCase = true)
-                    val matchesTag = selectedTag == null || entry.tag == selectedTag
-                    val matchesStatus = selectedStatus == null || entry.status == selectedStatus
-                    matchesSearch && matchesTag && matchesStatus
-                }
+                val filteredEntries =
+                    entries.reversed().filter { entry ->
+                        val matchesSearch =
+                            searchQuery.isBlank() ||
+                                entry.handlerName.contains(searchQuery, ignoreCase = true)
+                        val matchesTag = selectedTag == null || entry.tag == selectedTag
+                        val matchesStatus = selectedStatus == null || entry.status == selectedStatus
+                        matchesSearch && matchesTag && matchesStatus
+                    }
                 val hasActiveFilters =
                     searchQuery.isNotBlank() || selectedTag != null || selectedStatus != null
 
@@ -198,19 +209,21 @@ class DariActivity : ComponentActivity() {
                                             Text("Search...", color = Color.White.copy(alpha = 0.7f))
                                         },
                                         singleLine = true,
-                                        colors = TextFieldDefaults.colors(
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White,
-                                            cursorColor = Color.White,
-                                            focusedContainerColor = Color.Transparent,
-                                            unfocusedContainerColor = Color.Transparent,
-                                            focusedIndicatorColor = Color.Transparent,
-                                            unfocusedIndicatorColor = Color.Transparent,
-                                        ),
+                                        colors =
+                                            TextFieldDefaults.colors(
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White,
+                                                cursorColor = Color.White,
+                                                focusedContainerColor = Color.Transparent,
+                                                unfocusedContainerColor = Color.Transparent,
+                                                focusedIndicatorColor = Color.Transparent,
+                                                unfocusedIndicatorColor = Color.Transparent,
+                                            ),
                                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                        keyboardActions = KeyboardActions(
-                                            onSearch = { keyboardController?.hide() },
-                                        ),
+                                        keyboardActions =
+                                            KeyboardActions(
+                                                onSearch = { keyboardController?.hide() },
+                                            ),
                                         modifier = Modifier.fillMaxWidth(),
                                     )
                                 } else {
@@ -306,87 +319,91 @@ class DariActivity : ComponentActivity() {
                     },
                 ) { padding ->
                     Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(padding),
                     ) {
                         Column {
-                        if (availableTags.isNotEmpty()) {
+                            if (availableTags.isNotEmpty()) {
+                                FilterChipRow {
+                                    FilterChip(
+                                        label = "All tags",
+                                        selected = selectedTag == null,
+                                        onClick = { selectedTag = null },
+                                    )
+                                    availableTags.forEach { tag ->
+                                        FilterChip(
+                                            label = tag,
+                                            selected = selectedTag == tag,
+                                            onClick = {
+                                                selectedTag = if (selectedTag == tag) null else tag
+                                            },
+                                        )
+                                    }
+                                }
+                            }
                             FilterChipRow {
                                 FilterChip(
-                                    label = "All tags",
-                                    selected = selectedTag == null,
-                                    onClick = { selectedTag = null },
+                                    label = "All statuses",
+                                    selected = selectedStatus == null,
+                                    onClick = { selectedStatus = null },
                                 )
-                                availableTags.forEach { tag ->
+                                // Order: Error first (most actionable in a debug tool),
+                                // then In Progress (stuck calls), Success last (baseline noise).
+                                STATUS_FILTER_ORDER.forEach { status ->
+                                    val statusPalette = status.palette
                                     FilterChip(
-                                        label = tag,
-                                        selected = selectedTag == tag,
+                                        label = status.displayLabel(),
+                                        selected = selectedStatus == status,
                                         onClick = {
-                                            selectedTag = if (selectedTag == tag) null else tag
+                                            selectedStatus = if (selectedStatus == status) null else status
                                         },
+                                        selectedBackground = statusPalette.container,
+                                        selectedContent = statusPalette.onContainer,
                                     )
                                 }
                             }
-                        }
-                        FilterChipRow {
-                            FilterChip(
-                                label = "All statuses",
-                                selected = selectedStatus == null,
-                                onClick = { selectedStatus = null },
-                            )
-                            // Order: Error first (most actionable in a debug tool),
-                            // then In Progress (stuck calls), Success last (baseline noise).
-                            STATUS_FILTER_ORDER.forEach { status ->
-                                val statusPalette = status.palette
-                                FilterChip(
-                                    label = status.displayLabel(),
-                                    selected = selectedStatus == status,
-                                    onClick = {
-                                        selectedStatus = if (selectedStatus == status) null else status
-                                    },
-                                    selectedBackground = statusPalette.container,
-                                    selectedContent = statusPalette.onContainer,
-                                )
-                            }
-                        }
-                        if (filteredEntries.isEmpty()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                            ) {
-                                Text(
-                                    text = if (!hasActiveFilters) {
-                                        "No messages captured yet"
-                                    } else {
-                                        "No results for current filters"
-                                    },
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        } else {
-                            LazyColumn(state = lazyListState) {
-                                items(
-                                    items = filteredEntries,
-                                    key = { it.id },
-                                ) { entry ->
-                                    MessageListItem(
-                                        entry = entry,
-                                        onClick = {
-                                            val intent = Intent(
-                                                this@DariActivity,
-                                                DariDetailActivity::class.java,
-                                            ).apply {
-                                                putExtra("id", entry.id)
-                                            }
-                                            startActivity(intent)
-                                        },
+                            if (filteredEntries.isEmpty()) {
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                ) {
+                                    Text(
+                                        text =
+                                            if (!hasActiveFilters) {
+                                                "No messages captured yet"
+                                            } else {
+                                                "No results for current filters"
+                                            },
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                            } else {
+                                LazyColumn(state = lazyListState) {
+                                    items(
+                                        items = filteredEntries,
+                                        key = { it.id },
+                                    ) { entry ->
+                                        MessageListItem(
+                                            entry = entry,
+                                            onClick = {
+                                                val intent =
+                                                    Intent(
+                                                        this@DariActivity,
+                                                        DariDetailActivity::class.java,
+                                                    ).apply {
+                                                        putExtra("id", entry.id)
+                                                    }
+                                                startActivity(intent)
+                                            },
+                                        )
+                                    }
+                                }
                             }
-                        }
                         }
                     }
 
@@ -424,7 +441,6 @@ class DariActivity : ComponentActivity() {
                             },
                         )
                     }
-
                 }
             }
         }
@@ -432,8 +448,9 @@ class DariActivity : ComponentActivity() {
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val isGranted = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
+            val isGranted =
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
             if (!isGranted) {
                 notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -460,25 +477,28 @@ class DariActivity : ComponentActivity() {
 
 // Display order for the status filter chip row. Errors come first because
 // debugging the failure is the most common reason to open Dari.
-private val STATUS_FILTER_ORDER = listOf(
-    MessageStatus.ERROR,
-    MessageStatus.IN_PROGRESS,
-    MessageStatus.SUCCESS,
-)
+private val STATUS_FILTER_ORDER =
+    listOf(
+        MessageStatus.ERROR,
+        MessageStatus.IN_PROGRESS,
+        MessageStatus.SUCCESS,
+    )
 
-private fun MessageStatus.displayLabel(): String = when (this) {
-    MessageStatus.IN_PROGRESS -> "In Progress"
-    MessageStatus.SUCCESS -> "Success"
-    MessageStatus.ERROR -> "Error"
-}
+private fun MessageStatus.displayLabel(): String =
+    when (this) {
+        MessageStatus.IN_PROGRESS -> "In Progress"
+        MessageStatus.SUCCESS -> "Success"
+        MessageStatus.ERROR -> "Error"
+    }
 
 @Composable
 private fun FilterChipRow(content: @Composable () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         content()
@@ -496,23 +516,24 @@ private fun FilterChip(
     Text(
         text = label,
         style = MaterialTheme.typography.labelMedium,
-        color = if (selected) {
-            selectedContent
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
+        color =
+            if (selected) {
+                selectedContent
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (selected) {
-                    selectedBackground
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    if (selected) {
+                        selectedBackground
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ).clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }

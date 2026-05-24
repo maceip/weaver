@@ -43,21 +43,43 @@ data class AttachedFile(
 )
 
 enum class CanvasTool {
-    Cursor, Marquee, Edit, Hand, InsertImage, Palette, Favorite
+    Cursor,
+    Marquee,
+    Edit,
+    Hand,
+    InsertImage,
+    Palette,
+    Favorite,
 }
 
 enum class CanvasAction {
     // Generate menu
-    InstantPrototype, Variations, Regenerate, PredictiveHeatmap,
-    MobileAppVersion, MissingStates, Animate,
+    InstantPrototype,
+    Variations,
+    Regenerate,
+    PredictiveHeatmap,
+    MobileAppVersion,
+    MissingStates,
+    Animate,
+
     // Modify menu
-    Edit, Annotate, OpenDesignDoc,
+    Edit,
+    Annotate,
+    OpenDesignDoc,
+
     // Preview menu
-    PreviewNewTab, PreviewQrCode, PreviewMobile, PreviewTablet, PreviewDesktop,
+    PreviewNewTab,
+    PreviewQrCode,
+    PreviewMobile,
+    PreviewTablet,
+    PreviewDesktop,
+
     // Multi-select extras
-    AlignLeft, DistributeHorizontal,
+    AlignLeft,
+    DistributeHorizontal,
+
     // Generic
-    More
+    More,
 }
 
 @Serializable
@@ -72,11 +94,15 @@ data class Preset(
 sealed interface Outbound {
     @Serializable
     @SerialName("nodes_updated")
-    data class NodesUpdated(val nodes: List<StitchNode>) : Outbound
+    data class NodesUpdated(
+        val nodes: List<StitchNode>,
+    ) : Outbound
 
     @Serializable
     @SerialName("selection_changed")
-    data class SelectionChanged(val ids: List<String> = emptyList()) : Outbound
+    data class SelectionChanged(
+        val ids: List<String> = emptyList(),
+    ) : Outbound
 
     @Serializable
     @SerialName("generation_progress")
@@ -104,7 +130,9 @@ sealed interface Outbound {
 
     @Serializable
     @SerialName("agent_log_updated")
-    data class AgentLogUpdated(val entries: List<AgentLogEntry>) : Outbound
+    data class AgentLogUpdated(
+        val entries: List<AgentLogEntry>,
+    ) : Outbound
 
     @Serializable
     @SerialName("session_started")
@@ -137,7 +165,10 @@ sealed interface Outbound {
 
     @Serializable
     @SerialName("error")
-    data class Error(val code: String, val message: String) : Outbound
+    data class Error(
+        val code: String,
+        val message: String,
+    ) : Outbound
 }
 
 @Serializable
@@ -188,23 +219,33 @@ sealed interface Inbound {
 
     @Serializable
     @SerialName("attach_files")
-    data class AttachFiles(val files: List<AttachedFile>) : Inbound
+    data class AttachFiles(
+        val files: List<AttachedFile>,
+    ) : Inbound
 
     @Serializable
     @SerialName("select_preset")
-    data class SelectPreset(val presetId: String) : Inbound
+    data class SelectPreset(
+        val presetId: String,
+    ) : Inbound
 
     @Serializable
     @SerialName("select_model")
-    data class SelectModel(val modelId: String) : Inbound
+    data class SelectModel(
+        val modelId: String,
+    ) : Inbound
 
     @Serializable
     @SerialName("voice_input")
-    data class VoiceInput(val text: String) : Inbound
+    data class VoiceInput(
+        val text: String,
+    ) : Inbound
 
     @Serializable
     @SerialName("select_node")
-    data class SelectNode(val id: String) : Inbound
+    data class SelectNode(
+        val id: String,
+    ) : Inbound
 
     @Serializable
     @SerialName("clear_selection")
@@ -212,15 +253,23 @@ sealed interface Inbound {
 
     @Serializable
     @SerialName("synthesize_input")
-    data class SynthesizeInput(val event: JsonElement) : Inbound
+    data class SynthesizeInput(
+        val event: JsonElement,
+    ) : Inbound
 
     @Serializable
     @SerialName("request_export")
-    data class RequestExport(val kind: ExportKind, val id: String? = null) : Inbound
+    data class RequestExport(
+        val kind: ExportKind,
+        val id: String? = null,
+    ) : Inbound
 
     @Serializable
     @SerialName("viewport_changed")
-    data class ViewportChanged(val w: Int, val h: Int) : Inbound
+    data class ViewportChanged(
+        val w: Int,
+        val h: Int,
+    ) : Inbound
 
     @Serializable
     @SerialName("canvas_action")
@@ -231,15 +280,22 @@ sealed interface Inbound {
 
     @Serializable
     @SerialName("select_tool")
-    data class SelectTool(val tool: CanvasTool) : Inbound
+    data class SelectTool(
+        val tool: CanvasTool,
+    ) : Inbound
 
     @Serializable
     @SerialName("toggle_favorite")
-    data class ToggleFavorite(val nodeId: String) : Inbound
+    data class ToggleFavorite(
+        val nodeId: String,
+    ) : Inbound
 
     @Serializable
     @SerialName("add_note")
-    data class AddNote(val targetId: String, val text: String) : Inbound
+    data class AddNote(
+        val targetId: String,
+        val text: String,
+    ) : Inbound
 }
 
 /**
@@ -248,36 +304,38 @@ sealed interface Inbound {
  * replaying it stale would fight whatever the user is doing on reconnect.
  */
 val Inbound.isBufferable: Boolean
-    get() = when (this) {
-        is Inbound.SubmitPrompt,
-        is Inbound.Canvas,
-        is Inbound.Attach,
-        is Inbound.AttachFiles,
-        is Inbound.RequestExport,
-        is Inbound.ToggleFavorite,
-        is Inbound.AddNote,
-        -> true
+    get() =
+        when (this) {
+            is Inbound.SubmitPrompt,
+            is Inbound.Canvas,
+            is Inbound.Attach,
+            is Inbound.AttachFiles,
+            is Inbound.RequestExport,
+            is Inbound.ToggleFavorite,
+            is Inbound.AddNote,
+            -> true
 
-        is Inbound.SelectNode,
-        is Inbound.SelectPreset,
-        is Inbound.SelectModel,
-        is Inbound.VoiceInput,
-        is Inbound.SynthesizeInput,
-        is Inbound.ClearSelection,
-        is Inbound.SelectTool,
-        is Inbound.ViewportChanged,
-        -> false
-    }
+            is Inbound.SelectNode,
+            is Inbound.SelectPreset,
+            is Inbound.SelectModel,
+            is Inbound.VoiceInput,
+            is Inbound.SynthesizeInput,
+            is Inbound.ClearSelection,
+            is Inbound.SelectTool,
+            is Inbound.ViewportChanged,
+            -> false
+        }
 
 /** Short human label for a buffered action, shown in the outbox / orb. */
 val Inbound.outboxLabel: String
-    get() = when (this) {
-        is Inbound.SubmitPrompt -> text.take(60).ifBlank { "Prompt" }
-        is Inbound.Canvas -> action.name
-        is Inbound.Attach -> "Attach ${kind.name}"
-        is Inbound.AttachFiles -> "Attach ${files.size} file(s)"
-        is Inbound.RequestExport -> "Export ${kind.name}"
-        is Inbound.ToggleFavorite -> "Favorite"
-        is Inbound.AddNote -> "Note: ${text.take(40)}"
-        else -> this::class.simpleName ?: "Action"
-    }
+    get() =
+        when (this) {
+            is Inbound.SubmitPrompt -> text.take(60).ifBlank { "Prompt" }
+            is Inbound.Canvas -> action.name
+            is Inbound.Attach -> "Attach ${kind.name}"
+            is Inbound.AttachFiles -> "Attach ${files.size} file(s)"
+            is Inbound.RequestExport -> "Export ${kind.name}"
+            is Inbound.ToggleFavorite -> "Favorite"
+            is Inbound.AddNote -> "Note: ${text.take(40)}"
+            else -> this::class.simpleName ?: "Action"
+        }

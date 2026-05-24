@@ -22,7 +22,6 @@ data class MessageEntry(
     val requestTimestamp: Long = System.currentTimeMillis(),
     val responseTimestamp: Long? = null,
 ) {
-
     /**
      * Secondary constructor preserving the original parameter order for
      * backward compatibility with external positional callers (e.g., Java).
@@ -66,7 +65,10 @@ data class MessageEntry(
          * Truncates [data] to [maxLength] characters if it exceeds the limit.
          * Returns a Pair of (truncated data, wasTruncated).
          */
-        fun truncateIfNeeded(data: String?, maxLength: Int): Pair<String?, Boolean> {
+        fun truncateIfNeeded(
+            data: String?,
+            maxLength: Int,
+        ): Pair<String?, Boolean> {
             if (data == null || data.length <= maxLength) return data to false
             val truncated = data.take(maxLength) + "\n\n...[truncated, original length: ${data.length} chars]"
             return truncated to true

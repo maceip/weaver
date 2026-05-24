@@ -13,16 +13,15 @@ import androidx.room.TypeConverters
 )
 @TypeConverters(Converters::class)
 internal abstract class DariDatabase : RoomDatabase() {
-
     abstract fun messageDao(): MessageDao
 
     companion object {
         private const val DB_NAME = "dari.db"
 
-        fun create(context: Context): DariDatabase {
-            return Room.databaseBuilder(context, DariDatabase::class.java, DB_NAME)
+        fun create(context: Context): DariDatabase =
+            Room
+                .databaseBuilder(context, DariDatabase::class.java, DB_NAME)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
-        }
     }
 }

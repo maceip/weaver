@@ -19,7 +19,6 @@ private const val GOOGLE_DOMAIN = "https://accounts.google.com"
  * a visible browser hop.
  */
 object CookieInjector {
-
     fun apply(account: Account) {
         val cm = CookieManager.getInstance()
         cm.setAcceptCookie(true)
@@ -35,7 +34,10 @@ object CookieInjector {
 
     fun clear(onDone: () -> Unit = {}) {
         val cm = CookieManager.getInstance()
-        cm.removeAllCookies { cm.flush(); onDone() }
+        cm.removeAllCookies {
+            cm.flush()
+            onDone()
+        }
     }
 
     /**
@@ -50,11 +52,9 @@ object CookieInjector {
      * cookies can be present but stale, and only the editor mounting proves
      * the session is actually live.
      */
-    fun probeGoogleSession(): SessionSignal =
-        SessionClassifier.classifyGoogle(CookieManager.getInstance().getCookie(GOOGLE_DOMAIN))
+    fun probeGoogleSession(): SessionSignal = SessionClassifier.classifyGoogle(CookieManager.getInstance().getCookie(GOOGLE_DOMAIN))
 
-    fun probeStitchSession(): SessionSignal =
-        SessionClassifier.classifyStitch(CookieManager.getInstance().getCookie(STITCH_DOMAIN))
+    fun probeStitchSession(): SessionSignal = SessionClassifier.classifyStitch(CookieManager.getInstance().getCookie(STITCH_DOMAIN))
 }
 
 enum class SessionSignal {

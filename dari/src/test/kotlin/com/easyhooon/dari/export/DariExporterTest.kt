@@ -13,11 +13,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DariExporterTest {
-
-    private val exportJson = Json {
-        prettyPrint = true
-        encodeDefaults = true
-    }
+    private val exportJson =
+        Json {
+            prettyPrint = true
+            encodeDefaults = true
+        }
 
     private fun createEntry(
         id: Long = 1L,
@@ -80,71 +80,79 @@ class DariExporterTest {
 
     @Test
     fun `formatSingleEntry contains duration`() {
-        val text = DariExporter.formatSingleEntry(
-            createEntry(requestTimestamp = 1000L, responseTimestamp = 1500L),
-        )
+        val text =
+            DariExporter.formatSingleEntry(
+                createEntry(requestTimestamp = 1000L, responseTimestamp = 1500L),
+            )
         assertTrue(text.contains("Duration: 500 ms"))
     }
 
     @Test
     fun `formatSingleEntry omits duration when no response timestamp`() {
-        val text = DariExporter.formatSingleEntry(
-            createEntry(responseTimestamp = null),
-        )
+        val text =
+            DariExporter.formatSingleEntry(
+                createEntry(responseTimestamp = null),
+            )
         assertTrue(!text.contains("Duration:"))
     }
 
     @Test
     fun `formatSingleEntry pretty prints JSON request data`() {
-        val text = DariExporter.formatSingleEntry(
-            createEntry(requestData = """{"name":"dari"}"""),
-        )
+        val text =
+            DariExporter.formatSingleEntry(
+                createEntry(requestData = """{"name":"dari"}"""),
+            )
         assertTrue(text.contains("\"name\": \"dari\""))
     }
 
     @Test
     fun `formatSingleEntry shows empty marker for null data`() {
-        val text = DariExporter.formatSingleEntry(
-            createEntry(requestData = null, responseData = null),
-        )
+        val text =
+            DariExporter.formatSingleEntry(
+                createEntry(requestData = null, responseData = null),
+            )
         assertTrue(text.contains("(empty)"))
     }
 
     @Test
     fun `formatSingleEntry shows truncated indicator`() {
-        val entry = MessageEntry(
-            id = 1L,
-            requestId = "req-1",
-            handlerName = "test",
-            direction = MessageDirection.WEB_TO_APP,
-            requestData = "data",
-            requestDataTruncated = true,
-            requestTimestamp = 1000L,
-        )
+        val entry =
+            MessageEntry(
+                id = 1L,
+                requestId = "req-1",
+                handlerName = "test",
+                direction = MessageDirection.WEB_TO_APP,
+                requestData = "data",
+                requestDataTruncated = true,
+                requestTimestamp = 1000L,
+            )
         val text = DariExporter.formatSingleEntry(entry)
         assertTrue(text.contains("(truncated)"))
     }
 
     @Test
     fun `formatSingleEntry handles non-JSON data gracefully`() {
-        val text = DariExporter.formatSingleEntry(
-            createEntry(requestData = "not json at all"),
-        )
+        val text =
+            DariExporter.formatSingleEntry(
+                createEntry(requestData = "not json at all"),
+            )
         assertTrue(text.contains("not json at all"))
     }
 
     @Test
     fun `json serialization produces valid JSON array`() {
-        val entries = listOf(
-            createEntry(id = 1L, handlerName = "handler1"),
-            createEntry(id = 2L, handlerName = "handler2"),
-        )
+        val entries =
+            listOf(
+                createEntry(id = 1L, handlerName = "handler1"),
+                createEntry(id = 2L, handlerName = "handler2"),
+            )
         val exportable = entries.map { it.toExportable() }
         val json = exportJson
-        val jsonString = json.encodeToString(
-            kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
-            exportable,
-        )
+        val jsonString =
+            json.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
+                exportable,
+            )
 
         val parsed = Json.parseToJsonElement(jsonString).jsonArray
         assertEquals(2, parsed.size)
@@ -156,10 +164,11 @@ class DariExporterTest {
     fun `json serialization uses snake_case field names`() {
         val exportable = listOf(createEntry().toExportable())
         val json = exportJson
-        val jsonString = json.encodeToString(
-            kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
-            exportable,
-        )
+        val jsonString =
+            json.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
+                exportable,
+            )
 
         assertTrue(jsonString.contains("handler_name"))
         assertTrue(jsonString.contains("request_id"))
@@ -174,17 +183,19 @@ class DariExporterTest {
 
     @Test
     fun `json serialization includes null fields`() {
-        val entry = createEntry(
-            requestData = null,
-            responseData = null,
-            responseTimestamp = null,
-        )
+        val entry =
+            createEntry(
+                requestData = null,
+                responseData = null,
+                responseTimestamp = null,
+            )
         val exportable = listOf(entry.toExportable())
         val json = exportJson
-        val jsonString = json.encodeToString(
-            kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
-            exportable,
-        )
+        val jsonString =
+            json.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(ExportableMessage.serializer()),
+                exportable,
+            )
         val parsed = Json.parseToJsonElement(jsonString).jsonArray[0].jsonObject
 
         assertTrue(parsed.containsKey("request_data"))

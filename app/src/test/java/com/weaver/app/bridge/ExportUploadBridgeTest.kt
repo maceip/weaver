@@ -23,16 +23,21 @@ import org.robolectric.RuntimeEnvironment
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ExportUploadBridgeTest {
-
     /** A transport whose readiness the test drives; records the wire payloads. */
-    private class RecordingTransport(initial: TransportStatus) : BridgeTransport {
+    private class RecordingTransport(
+        initial: TransportStatus,
+    ) : BridgeTransport {
         override val id = "recording"
         val statusFlow = MutableStateFlow(initial)
         override val status: StateFlow<TransportStatus> = statusFlow
         val sent = mutableListOf<String>()
+
         override fun setOutboundSink(sink: (String) -> Unit) = Unit
+
         override fun start() = Unit
+
         override fun stop() = Unit
+
         override fun sendInbound(payloadJson: String) {
             sent += payloadJson
         }
@@ -43,8 +48,11 @@ class ExportUploadBridgeTest {
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences("weaver_outbox", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
     }
 
     private fun readyBridge(): Pair<Bridge, RecordingTransport> {
@@ -90,10 +98,11 @@ class ExportUploadBridgeTest {
     @Test
     fun uploadFiles_multipleFilesReachTheWireIntact() {
         val (bridge, transport) = readyBridge()
-        val files = listOf(
-            AttachedFile("logo.png", "image/png", "QQ=="),
-            AttachedFile("tokens.json", "application/json", "Qg=="),
-        )
+        val files =
+            listOf(
+                AttachedFile("logo.png", "image/png", "QQ=="),
+                AttachedFile("tokens.json", "application/json", "Qg=="),
+            )
         bridge.send(Inbound.AttachFiles(files))
         val decoded = bridge.json.decodeFromString(Inbound.serializer(), transport.sent.single())
         assertEquals(Inbound.AttachFiles(files), decoded)
@@ -101,20 +110,21 @@ class ExportUploadBridgeTest {
 
     // ── ExportComplete — the download → bridge → Compose event path ─────────
     @Test
-    fun exportComplete_fromADownload_reachesTheComposeEventStream() = runTest {
-        val bridge = Bridge()
-        val received = mutableListOf<Outbound>()
-        backgroundScope.launch { bridge.events.collect { received += it } }
-        runCurrent()
+    fun exportComplete_fromADownload_reachesTheComposeEventStream() =
+        runTest {
+            val bridge = Bridge()
+            val received = mutableListOf<Outbound>()
+            backgroundScope.launch { bridge.events.collect { received += it } }
+            runCurrent()
 
-        bridge.handleOutbound(
-            """{"type":"export_complete","kind":"Zip","payload":{"url":"https://x.test/app.zip"}}""",
-        )
-        runCurrent()
+            bridge.handleOutbound(
+                """{"type":"export_complete","kind":"Zip","payload":{"url":"https://x.test/app.zip"}}""",
+            )
+            runCurrent()
 
-        val complete = received.filterIsInstance<Outbound.ExportComplete>().single()
-        assertEquals(ExportKind.Zip, complete.kind)
-    }
+            val complete = received.filterIsInstance<Outbound.ExportComplete>().single()
+            assertEquals(ExportKind.Zip, complete.kind)
+        }
 
     // ── Offline — export + upload buffer, then flush on reconnect ────────────
     @Test

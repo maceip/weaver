@@ -37,6 +37,7 @@ class BridgeRouter(
     override val status: StateFlow<TransportStatus> = _status.asStateFlow()
 
     private val _activeId = MutableStateFlow(local.id)
+
     /** Which backend is currently selected — surface in debug UI / Dari. */
     val activeId: StateFlow<String> = _activeId.asStateFlow()
 
@@ -54,18 +55,20 @@ class BridgeRouter(
     override fun start() {
         local.start()
         remote.start()
-        collectors += scope.launch {
-            local.status.collect { s ->
-                localBreaker.onStatus(s, now())
-                recompute()
+        collectors +=
+            scope.launch {
+                local.status.collect { s ->
+                    localBreaker.onStatus(s, now())
+                    recompute()
+                }
             }
-        }
-        collectors += scope.launch {
-            remote.status.collect { s ->
-                remoteBreaker.onStatus(s, now())
-                recompute()
+        collectors +=
+            scope.launch {
+                remote.status.collect { s ->
+                    remoteBreaker.onStatus(s, now())
+                    recompute()
+                }
             }
-        }
     }
 
     override fun stop() {
@@ -88,25 +91,28 @@ class BridgeRouter(
 
     private fun recompute() {
         val t = now()
-        val choice = routeDecision(
-            localStatus = local.status.value,
-            remoteStatus = remote.status.value,
-            localUsable = localBreaker.usable(t),
-            remoteUsable = remoteBreaker.usable(t),
-        )
-        val chosen = when (choice) {
-            RouteChoice.Local -> local.id
-            RouteChoice.Remote -> remote.id
-            RouteChoice.None -> ""
-        }
+        val choice =
+            routeDecision(
+                localStatus = local.status.value,
+                remoteStatus = remote.status.value,
+                localUsable = localBreaker.usable(t),
+                remoteUsable = remoteBreaker.usable(t),
+            )
+        val chosen =
+            when (choice) {
+                RouteChoice.Local -> local.id
+                RouteChoice.Remote -> remote.id
+                RouteChoice.None -> ""
+            }
         if (chosen != _activeId.value) {
             Log.i(TAG, "route ${_activeId.value} -> $chosen")
             _activeId.value = chosen
         }
-        _status.value = when (choice) {
-            RouteChoice.Local -> local.status.value
-            RouteChoice.Remote -> remote.status.value
-            RouteChoice.None -> TransportStatus.Failed
-        }
+        _status.value =
+            when (choice) {
+                RouteChoice.Local -> local.status.value
+                RouteChoice.Remote -> remote.status.value
+                RouteChoice.None -> TransportStatus.Failed
+            }
     }
 }

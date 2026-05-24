@@ -11,9 +11,16 @@ private const val TAG = "WeaverAuth"
 
 sealed interface AuthState {
     data object Unknown : AuthState
+
     data object Authenticating : AuthState
-    data class Authenticated(val account: Account) : AuthState
-    data class Failed(val reason: String) : AuthState
+
+    data class Authenticated(
+        val account: Account,
+    ) : AuthState
+
+    data class Failed(
+        val reason: String,
+    ) : AuthState
 }
 
 /**

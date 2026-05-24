@@ -17,27 +17,29 @@ class AccountPicker(
     private val serverClientId: String,
     private val resolver: AccountResolver,
 ) {
-
     private val manager = CredentialManager.create(context)
 
     suspend fun show(activityContext: Context): Account? {
-        val option = GetGoogleIdOption.Builder()
-            .setServerClientId(serverClientId)
-            .setFilterByAuthorizedAccounts(false)
-            .setAutoSelectEnabled(false)
-            .build()
+        val option =
+            GetGoogleIdOption
+                .Builder()
+                .setServerClientId(serverClientId)
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         return try {
             val response = manager.getCredential(activityContext, request)
             val cred = response.credential
             if (cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val token = GoogleIdTokenCredential.createFrom(cred.data)
-                val account = Account(
-                    id = token.id,
-                    email = token.id,
-                    displayName = token.displayName,
-                    idToken = token.idToken,
-                )
+                val account =
+                    Account(
+                        id = token.id,
+                        email = token.id,
+                        displayName = token.displayName,
+                        idToken = token.idToken,
+                    )
                 resolver.persist(account)
                 account
             } else {

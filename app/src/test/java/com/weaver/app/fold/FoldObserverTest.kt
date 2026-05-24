@@ -9,7 +9,6 @@ import org.junit.Test
 
 /** Covers the foldable posture mapping that drives the tabletop layout. */
 class FoldObserverTest {
-
     /** [foldStateOf] only reads state + orientation; bounds is never touched. */
     private class FakeFold(
         override val state: FoldingFeature.State,
@@ -33,9 +32,12 @@ class FoldObserverTest {
 
     @Test
     fun flatVerticalHingeIsFolded() {
-        val state = foldStateOf(
-            FakeFold(FoldingFeature.State.FLAT, FoldingFeature.Orientation.VERTICAL), 1080, 2400,
-        )
+        val state =
+            foldStateOf(
+                FakeFold(FoldingFeature.State.FLAT, FoldingFeature.Orientation.VERTICAL),
+                1080,
+                2400,
+            )
         assertTrue(state.isFolded)
         assertFalse(state.isTabletop)
         assertFalse(state.isHalfOpen)
@@ -43,10 +45,12 @@ class FoldObserverTest {
 
     @Test
     fun halfOpenHorizontalHingeIsTabletop() {
-        val state = foldStateOf(
-            FakeFold(FoldingFeature.State.HALF_OPENED, FoldingFeature.Orientation.HORIZONTAL),
-            2200, 1840,
-        )
+        val state =
+            foldStateOf(
+                FakeFold(FoldingFeature.State.HALF_OPENED, FoldingFeature.Orientation.HORIZONTAL),
+                2200,
+                1840,
+            )
         assertTrue(state.isTabletop)
         assertTrue(state.isHalfOpen)
         assertFalse(state.isFolded)
@@ -54,10 +58,12 @@ class FoldObserverTest {
 
     @Test
     fun halfOpenVerticalHingeIsBookPostureNotTabletop() {
-        val state = foldStateOf(
-            FakeFold(FoldingFeature.State.HALF_OPENED, FoldingFeature.Orientation.VERTICAL),
-            2200, 1840,
-        )
+        val state =
+            foldStateOf(
+                FakeFold(FoldingFeature.State.HALF_OPENED, FoldingFeature.Orientation.VERTICAL),
+                2200,
+                1840,
+            )
         assertTrue(state.isHalfOpen)
         assertFalse("a vertical hinge is the book posture, not tabletop", state.isTabletop)
         assertFalse(state.isFolded)
@@ -65,9 +71,12 @@ class FoldObserverTest {
 
     @Test
     fun fullyOpenHorizontalHingeIsNeitherFoldedNorTabletop() {
-        val state = foldStateOf(
-            FakeFold(FoldingFeature.State.FLAT, FoldingFeature.Orientation.HORIZONTAL), 2200, 1840,
-        )
+        val state =
+            foldStateOf(
+                FakeFold(FoldingFeature.State.FLAT, FoldingFeature.Orientation.HORIZONTAL),
+                2200,
+                1840,
+            )
         assertFalse(state.isFolded)
         assertFalse(state.isTabletop)
         assertFalse(state.isHalfOpen)

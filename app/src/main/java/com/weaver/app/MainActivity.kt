@@ -10,13 +10,13 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.animation.doOnEnd
-import androidx.core.content.IntentCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.animation.doOnEnd
+import androidx.core.content.IntentCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.easyhooon.dari.Dari
 import com.easyhooon.dari.interceptor.DariInterceptor
 import com.weaver.app.auth.AccountPicker
@@ -35,7 +35,6 @@ import com.weaver.app.webview.WebViewHost
 import kotlinx.coroutines.Dispatchers
 
 class MainActivity : ComponentActivity() {
-
     private val interceptor: DariInterceptor? = Dari.createInterceptor(tag = "Stitch")
     private lateinit var bridge: Bridge
     private lateinit var webViewHost: WebViewHost
@@ -43,10 +42,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var foldObserver: FoldObserver
     private lateinit var authController: AuthController
 
-    private val builtinPresets: List<Preset> = listOf(
-        Preset("alexandria", "Alexandria", listOf("#1E3A5F", "#F4D35E", "#2E2E2E"), isBuiltin = true),
-        Preset("bauhaus", "Bauhaus", listOf("#D72631", "#2E294E", "#E8C547"), isBuiltin = true),
-    )
+    private val builtinPresets: List<Preset> =
+        listOf(
+            Preset("alexandria", "Alexandria", listOf("#1E3A5F", "#F4D35E", "#2E2E2E"), isBuiltin = true),
+            Preset("bauhaus", "Bauhaus", listOf("#D72631", "#2E294E", "#E8C547"), isBuiltin = true),
+        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -73,13 +73,14 @@ class MainActivity : ComponentActivity() {
         // The router prefers local when it holds a Stitch session, else remote.
         val localTransport = LocalWebViewTransport()
         val attestationProvider = AttestationProvider()
-        val remoteTransport = RemoteSessionTransport(
-            endpoint = ServerEndpoints.SESSION_BRIDGE,
-            deviceId = app.deviceId,
-            idTokenProvider = { app.accountResolver.current()?.idToken },
-            json = bridge.json,
-            attestationHeader = attestationProvider::attestationHeader,
-        )
+        val remoteTransport =
+            RemoteSessionTransport(
+                endpoint = ServerEndpoints.SESSION_BRIDGE,
+                deviceId = app.deviceId,
+                idTokenProvider = { app.accountResolver.current()?.idToken },
+                json = bridge.json,
+                attestationHeader = attestationProvider::attestationHeader,
+            )
         val router = BridgeRouter(localTransport, remoteTransport)
         bridge.bindTransport(router)
         router.start()
@@ -95,7 +96,9 @@ class MainActivity : ComponentActivity() {
         webViewHost.onStitchProjectIdResolved = { stitchId ->
             // Bind the freshly-minted Stitch project id to whichever local draft
             // is on top. The repository ignores the call if no draft is current.
-            val draft = app.projectRepository.projects.value.firstOrNull { it.isDraft }
+            val draft =
+                app.projectRepository.projects.value
+                    .firstOrNull { it.isDraft }
             if (draft != null) app.projectRepository.bindStitchId(draft.id, stitchId)
         }
         foldObserver = FoldObserver(this, bridge)
@@ -114,20 +117,24 @@ class MainActivity : ComponentActivity() {
         // Stitch into the smallest mobile bucket and React Flow simply
         // won't mount — we need a real viewport for the canvas to render.
         // alpha = 0 on the host keeps it invisible behind the Compose tree.
-        val hiddenHost = FrameLayout(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            )
-            alpha = 0f
-        }
-        val webView = webViewHost.create().apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            )
-            visibility = View.VISIBLE
-        }
+        val hiddenHost =
+            FrameLayout(this).apply {
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                alpha = 0f
+            }
+        val webView =
+            webViewHost.create().apply {
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                visibility = View.VISIBLE
+            }
         hiddenHost.addView(webView)
         // Pre-warm WebView must not steal touches from the Compose UI above it.
         hiddenHost.isClickable = false
@@ -183,15 +190,25 @@ class MainActivity : ComponentActivity() {
      * path as the in-app "Upload Files" picker. Buffered if Stitch isn't ready.
      */
     private fun handleShareIntent(intent: Intent) {
-        val uris: List<Uri> = when (intent.action) {
-            Intent.ACTION_SEND ->
-                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-                    ?.let(::listOf).orEmpty()
-            Intent.ACTION_SEND_MULTIPLE ->
-                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-                    .orEmpty()
-            else -> emptyList()
-        }
+        val uris: List<Uri> =
+            when (intent.action) {
+                Intent.ACTION_SEND -> {
+                    IntentCompat
+                        .getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                        ?.let(::listOf)
+                        .orEmpty()
+                }
+
+                Intent.ACTION_SEND_MULTIPLE -> {
+                    IntentCompat
+                        .getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                        .orEmpty()
+                }
+
+                else -> {
+                    emptyList()
+                }
+            }
         if (uris.isNotEmpty()) fileChooser.ingestUris(uris)
     }
 

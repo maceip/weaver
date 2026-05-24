@@ -5,7 +5,6 @@ import org.junit.Test
 
 /** Verifies the cookie-jar session signal — the fast primary readiness probe. */
 class SessionClassifierTest {
-
     @Test
     fun googleSignedInWhenSecure1PSIDPresent() {
         val header = "NID=abc; __Secure-1PSID=xyz; CONSENT=YES"

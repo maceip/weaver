@@ -16,12 +16,13 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AgentOrbTest {
-
     @get:Rule
     val rule = createComposeRule()
 
-    private fun task(prompt: String, status: TaskStatus) =
-        TaskEntry(id = prompt, prompt = prompt, status = status, startedAt = 0L)
+    private fun task(
+        prompt: String,
+        status: TaskStatus,
+    ) = TaskEntry(id = prompt, prompt = prompt, status = status, startedAt = 0L)
 
     @Test
     fun collapsedOrbHidesThePanel() {
@@ -39,11 +40,12 @@ class AgentOrbTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             AgentOrb(
-                tasks = listOf(
-                    task("draft the hero", TaskStatus.Done),
-                    task("add a footer", TaskStatus.Running),
-                    task("tighten spacing", TaskStatus.Queued),
-                ),
+                tasks =
+                    listOf(
+                        task("draft the hero", TaskStatus.Done),
+                        task("add a footer", TaskStatus.Running),
+                        task("tighten spacing", TaskStatus.Queued),
+                    ),
                 online = true,
             )
         }
@@ -61,11 +63,12 @@ class AgentOrbTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             AgentOrb(
-                tasks = listOf(
-                    task("a", TaskStatus.Done),
-                    task("b", TaskStatus.Running),
-                    task("c", TaskStatus.Queued),
-                ),
+                tasks =
+                    listOf(
+                        task("a", TaskStatus.Done),
+                        task("b", TaskStatus.Running),
+                        task("c", TaskStatus.Queued),
+                    ),
                 online = true,
             )
         }
@@ -82,12 +85,13 @@ class AgentOrbTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             AgentOrb(
-                tasks = listOf(
-                    task("oldest", TaskStatus.Done),
-                    task("second", TaskStatus.Done),
-                    task("third", TaskStatus.Done),
-                    task("newest", TaskStatus.Running),
-                ),
+                tasks =
+                    listOf(
+                        task("oldest", TaskStatus.Done),
+                        task("second", TaskStatus.Done),
+                        task("third", TaskStatus.Done),
+                        task("newest", TaskStatus.Running),
+                    ),
                 online = true,
             )
         }
@@ -104,10 +108,11 @@ class AgentOrbTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             AgentOrb(
-                tasks = listOf(
-                    task("queued one", TaskStatus.Queued),
-                    task("queued two", TaskStatus.Queued),
-                ),
+                tasks =
+                    listOf(
+                        task("queued one", TaskStatus.Queued),
+                        task("queued two", TaskStatus.Queued),
+                    ),
                 online = false,
             )
         }

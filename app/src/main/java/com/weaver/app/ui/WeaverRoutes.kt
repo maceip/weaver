@@ -23,25 +23,36 @@ data object Login : NavKey
 data object Home : NavKey
 
 @Serializable
-data class Overview(val projectId: String) : NavKey
+data class Overview(
+    val projectId: String,
+) : NavKey
 
 @Serializable
-data class Focused(val projectId: String, val nodeId: String) : NavKey
+data class Focused(
+    val projectId: String,
+    val nodeId: String,
+) : NavKey
 
 @Serializable
-data class MultiSelect(val projectId: String) : NavKey
+data class MultiSelect(
+    val projectId: String,
+) : NavKey
 
 /** The project the user is currently inside, read off the back stack top. */
-fun List<NavKey>.currentProjectId(): String? = when (val top = lastOrNull()) {
-    is Overview -> top.projectId
-    is Focused -> top.projectId
-    is MultiSelect -> top.projectId
-    else -> null
-}
+fun List<NavKey>.currentProjectId(): String? =
+    when (val top = lastOrNull()) {
+        is Overview -> top.projectId
+        is Focused -> top.projectId
+        is MultiSelect -> top.projectId
+        else -> null
+    }
 
 /** How the back stack should react to a change in Stitch's selection. */
 sealed interface NavReconcile {
-    data class Push(val key: NavKey) : NavReconcile
+    data class Push(
+        val key: NavKey,
+    ) : NavReconcile
+
     data object PopTop : NavReconcile
 }
 
@@ -50,20 +61,28 @@ sealed interface NavReconcile {
  * designs are PUSHED, never replaced — clicking design A → B → C builds real
  * history so predictive back walks C → B → A → overview.
  */
-fun reconcileSelection(backStack: List<NavKey>, selection: List<String>): NavReconcile? {
+fun reconcileSelection(
+    backStack: List<NavKey>,
+    selection: List<String>,
+): NavReconcile? {
     val top = backStack.lastOrNull()
     if (top is Login || top is Home || top == null) return null
     val projectId = backStack.currentProjectId() ?: return null
     return when {
-        selection.size > 1 && top !is MultiSelect && top !is Focused ->
+        selection.size > 1 && top !is MultiSelect && top !is Focused -> {
             NavReconcile.Push(MultiSelect(projectId))
+        }
 
-        selection.isEmpty() && top is MultiSelect ->
+        selection.isEmpty() && top is MultiSelect -> {
             NavReconcile.PopTop
+        }
 
-        selection.size == 1 && top is Focused && top.nodeId != selection.first() ->
+        selection.size == 1 && top is Focused && top.nodeId != selection.first() -> {
             NavReconcile.Push(Focused(projectId, selection.first()))
+        }
 
-        else -> null
+        else -> {
+            null
+        }
     }
 }

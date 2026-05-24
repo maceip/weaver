@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
-import androidx.compose.ui.platform.LocalContext
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 
 /** Chucker-style blue TopBar color, used as the brand primary in both themes. */
 val DariBlue = Color(0xFF2D6AB1)
@@ -37,29 +37,31 @@ private val DariDarkOutlineVariant = Color(0xFF42424A)
 // white feels harsh next to the dimmed primary color in dark mode.
 private val DariDarkOnPrimary = Color(0xFFC5C5CA)
 
-private val DariLightColorScheme = lightColorScheme(
-    primary = DariBlue,
-    onPrimary = Color.White,
-    primaryContainer = DariBlue,
-    onPrimaryContainer = Color.White,
-)
+private val DariLightColorScheme =
+    lightColorScheme(
+        primary = DariBlue,
+        onPrimary = Color.White,
+        primaryContainer = DariBlue,
+        onPrimaryContainer = Color.White,
+    )
 
-private val DariDarkColorScheme = darkColorScheme(
-    primary = DariBlueDark,
-    onPrimary = DariDarkOnPrimary,
-    primaryContainer = DariBlueDark,
-    onPrimaryContainer = DariDarkOnPrimary,
-    background = DariDarkBackground,
-    onBackground = DariDarkOnSurface,
-    surface = DariDarkSurface,
-    onSurface = DariDarkOnSurface,
-    surfaceVariant = DariDarkSurfaceVariant,
-    onSurfaceVariant = DariDarkOnSurfaceVariant,
-    surfaceContainer = DariDarkSurface,
-    surfaceContainerHigh = DariDarkSurfaceVariant,
-    outline = DariDarkOutline,
-    outlineVariant = DariDarkOutlineVariant,
-)
+private val DariDarkColorScheme =
+    darkColorScheme(
+        primary = DariBlueDark,
+        onPrimary = DariDarkOnPrimary,
+        primaryContainer = DariBlueDark,
+        onPrimaryContainer = DariDarkOnPrimary,
+        background = DariDarkBackground,
+        onBackground = DariDarkOnSurface,
+        surface = DariDarkSurface,
+        onSurface = DariDarkOnSurface,
+        surfaceVariant = DariDarkSurfaceVariant,
+        onSurfaceVariant = DariDarkOnSurfaceVariant,
+        surfaceContainer = DariDarkSurface,
+        surfaceContainerHigh = DariDarkSurfaceVariant,
+        outline = DariDarkOutline,
+        outlineVariant = DariDarkOutlineVariant,
+    )
 
 /**
  * Material3 theme wrapper for Dari's internal screens.
@@ -99,14 +101,15 @@ internal fun ApplyDariSystemBars(isDark: Boolean) {
     DisposableEffect(isDark) {
         val statusBarColor = if (isDark) DariBlueDark else DariBlue
         val statusBarStyle = SystemBarStyle.dark(statusBarColor.toArgb())
-        val navBarStyle = if (isDark) {
-            SystemBarStyle.dark(DariDarkBackground.toArgb())
-        } else {
-            SystemBarStyle.light(
-                scrim = Color.White.toArgb(),
-                darkScrim = Color.White.toArgb(),
-            )
-        }
+        val navBarStyle =
+            if (isDark) {
+                SystemBarStyle.dark(DariDarkBackground.toArgb())
+            } else {
+                SystemBarStyle.light(
+                    scrim = Color.White.toArgb(),
+                    darkScrim = Color.White.toArgb(),
+                )
+            }
         activity.enableEdgeToEdge(
             statusBarStyle = statusBarStyle,
             navigationBarStyle = navBarStyle,
@@ -115,11 +118,12 @@ internal fun ApplyDariSystemBars(isDark: Boolean) {
     }
 }
 
-private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.findComponentActivity()
-    else -> null
-}
+private tailrec fun Context.findComponentActivity(): ComponentActivity? =
+    when (this) {
+        is ComponentActivity -> this
+        is ContextWrapper -> baseContext.findComponentActivity()
+        else -> null
+    }
 
 object DariTopBarColors {
     @OptIn(ExperimentalMaterial3Api::class)

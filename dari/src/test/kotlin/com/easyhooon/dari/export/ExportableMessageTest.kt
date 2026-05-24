@@ -8,7 +8,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ExportableMessageTest {
-
     private fun createEntry(
         id: Long = 1L,
         requestId: String? = "req-1",
@@ -80,13 +79,14 @@ class ExportableMessageTest {
 
     @Test
     fun `toExportable handles null optional fields`() {
-        val entry = createEntry(
-            requestId = null,
-            tag = null,
-            requestData = null,
-            responseData = null,
-            responseTimestamp = null,
-        )
+        val entry =
+            createEntry(
+                requestId = null,
+                tag = null,
+                requestData = null,
+                responseData = null,
+                responseTimestamp = null,
+            )
         val exportable = entry.toExportable()
 
         assertNull(exportable.requestId)
@@ -99,10 +99,11 @@ class ExportableMessageTest {
 
     @Test
     fun `toExportable preserves truncation flags`() {
-        val entry = createEntry(
-            requestDataTruncated = true,
-            responseDataTruncated = true,
-        )
+        val entry =
+            createEntry(
+                requestDataTruncated = true,
+                responseDataTruncated = true,
+            )
         val exportable = entry.toExportable()
 
         assertEquals(true, exportable.requestDataTruncated)

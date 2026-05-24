@@ -3,9 +3,9 @@ package com.easyhooon.dari.notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.os.Build
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.easyhooon.dari.MessageDirection
 import com.easyhooon.dari.R
@@ -15,11 +15,12 @@ import com.easyhooon.dari.ui.DariActivity
  * Chucker-style InboxStyle notification.
  * Displays recent bridge messages as lines within a single notification.
  */
-internal class DariNotification(private val context: Context) {
-
+internal class DariNotification(
+    private val context: Context,
+) {
     companion object {
         private const val CHANNEL_ID = "dari"
-        private const val NOTIFICATION_ID = 0x44_6172  // "Dar"
+        private const val NOTIFICATION_ID = 0x44_6172 // "Dar"
         private const val MAX_LINES = 7
     }
 
@@ -35,13 +36,14 @@ internal class DariNotification(private val context: Context) {
     }
 
     private fun createChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Dari",
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            setShowBadge(false)
-        }
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                "Dari",
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                setShowBadge(false)
+            }
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -54,11 +56,16 @@ internal class DariNotification(private val context: Context) {
     /**
      * Adds a new bridge message to the notification.
      */
-    fun postMessage(handlerName: String, direction: MessageDirection, @Suppress("UNUSED_PARAMETER") tag: String? = null) {
-        val directionLabel = when (direction) {
-            MessageDirection.WEB_TO_APP -> "W\u2192A"
-            MessageDirection.APP_TO_WEB -> "A\u2192W"
-        }
+    fun postMessage(
+        handlerName: String,
+        direction: MessageDirection,
+        @Suppress("UNUSED_PARAMETER") tag: String? = null,
+    ) {
+        val directionLabel =
+            when (direction) {
+                MessageDirection.WEB_TO_APP -> "W\u2192A"
+                MessageDirection.APP_TO_WEB -> "A\u2192W"
+            }
         val line = "$directionLabel  $handlerName"
 
         if (recentLines.size >= MAX_LINES) {
@@ -78,15 +85,18 @@ internal class DariNotification(private val context: Context) {
 
     private fun postNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val isGranted = context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
+            val isGranted =
+                context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
             if (!isGranted) return
         }
 
         val pendingIntent = createPendingIntent()
 
-        val inboxStyle = NotificationCompat.InboxStyle()
-            .setBigContentTitle("Recording bridge activity")
+        val inboxStyle =
+            NotificationCompat
+                .InboxStyle()
+                .setBigContentTitle("Recording bridge activity")
 
         recentLines.forEach { line ->
             inboxStyle.addLine(line)
@@ -94,25 +104,28 @@ internal class DariNotification(private val context: Context) {
 
         val contentText = recentLines.last()
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_dari)
-            .setColor(0xFF2D6AB1.toInt())
-            .setContentTitle("Recording bridge activity")
-            .setContentText(contentText)
-            .setSubText("$totalCount")
-            .setStyle(inboxStyle)
-            .setOngoing(true)
-            .setContentIntent(pendingIntent)
-            .addAction(0, "Clear", createClearPendingIntent())
-            .build()
+        val notification =
+            NotificationCompat
+                .Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_dari)
+                .setColor(0xFF2D6AB1.toInt())
+                .setContentTitle("Recording bridge activity")
+                .setContentText(contentText)
+                .setSubText("$totalCount")
+                .setStyle(inboxStyle)
+                .setOngoing(true)
+                .setContentIntent(pendingIntent)
+                .addAction(0, "Clear", createClearPendingIntent())
+                .build()
 
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     private fun createPendingIntent(): PendingIntent {
-        val intent = Intent(context, DariActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
+        val intent =
+            Intent(context, DariActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
         return PendingIntent.getActivity(
             context,
             0,

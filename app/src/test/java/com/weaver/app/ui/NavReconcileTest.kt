@@ -12,7 +12,6 @@ import org.junit.Test
  * back walks the real history.
  */
 class NavReconcileTest {
-
     private fun MutableList<NavKey>.apply(selection: List<String>) {
         when (val op = reconcileSelection(this, selection)) {
             is NavReconcile.Push -> add(op.key)
@@ -42,10 +41,11 @@ class NavReconcileTest {
 
     @Test
     fun switchingFocusedNodePushesRatherThanReplaces() {
-        val op = reconcileSelection(
-            listOf(Home, Overview("p"), Focused("p", "a")),
-            listOf("b"),
-        )
+        val op =
+            reconcileSelection(
+                listOf(Home, Overview("p"), Focused("p", "a")),
+                listOf("b"),
+            )
         assertEquals(NavReconcile.Push(Focused("p", "b")), op)
     }
 
@@ -65,10 +65,11 @@ class NavReconcileTest {
 
     @Test
     fun crossProjectReconcileUsesTheTopProject() {
-        val op = reconcileSelection(
-            listOf(Home, Overview("p1"), Overview("p2"), Focused("p2", "a")),
-            listOf("b"),
-        )
+        val op =
+            reconcileSelection(
+                listOf(Home, Overview("p1"), Overview("p2"), Focused("p2", "a")),
+                listOf("b"),
+            )
         assertEquals(NavReconcile.Push(Focused("p2", "b")), op)
     }
 

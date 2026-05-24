@@ -65,13 +65,17 @@ import com.weaver.app.bridge.AttachmentKind
 import com.weaver.app.bridge.Preset
 import com.weaver.app.bridge.SlashCommand
 
-data class ModelChoice(val id: String, val label: String)
-
-val DefaultModels = listOf(
-    ModelChoice("gemini-3.1-pro", "3.1 Pro"),
-    ModelChoice("gemini-3.1-flash", "3.1 Flash"),
-    ModelChoice("gemini-2.5-pro", "2.5 Pro"),
+data class ModelChoice(
+    val id: String,
+    val label: String,
 )
+
+val DefaultModels =
+    listOf(
+        ModelChoice("gemini-3.1-pro", "3.1 Pro"),
+        ModelChoice("gemini-3.1-flash", "3.1 Flash"),
+        ModelChoice("gemini-2.5-pro", "2.5 Pro"),
+    )
 
 data class PromptInputState(
     val text: TextFieldValue = TextFieldValue(""),
@@ -81,30 +85,36 @@ data class PromptInputState(
 ) {
     companion object {
         /** Keeps a half-typed prompt across rotation / process death. */
-        val Saver: Saver<PromptInputState, Any> = listSaver(
-            save = { state ->
-                listOf(
-                    state.text.text,
-                    state.text.selection.start.toString(),
-                    state.text.selection.end.toString(),
-                    state.activeSlash?.name.orEmpty(),
-                    state.selectedPresetId.orEmpty(),
-                    state.selectedModelId,
-                )
-            },
-            restore = { saved ->
-                PromptInputState(
-                    text = TextFieldValue(
-                        text = saved[0],
-                        selection = TextRange(saved[1].toInt(), saved[2].toInt()),
-                    ),
-                    activeSlash = saved[3].takeIf { it.isNotEmpty() }
-                        ?.let { SlashCommand.valueOf(it) },
-                    selectedPresetId = saved[4].takeIf { it.isNotEmpty() },
-                    selectedModelId = saved[5],
-                )
-            },
-        )
+        val Saver: Saver<PromptInputState, Any> =
+            listSaver(
+                save = { state ->
+                    listOf(
+                        state.text.text,
+                        state.text.selection.start
+                            .toString(),
+                        state.text.selection.end
+                            .toString(),
+                        state.activeSlash?.name.orEmpty(),
+                        state.selectedPresetId.orEmpty(),
+                        state.selectedModelId,
+                    )
+                },
+                restore = { saved ->
+                    PromptInputState(
+                        text =
+                            TextFieldValue(
+                                text = saved[0],
+                                selection = TextRange(saved[1].toInt(), saved[2].toInt()),
+                            ),
+                        activeSlash =
+                            saved[3]
+                                .takeIf { it.isNotEmpty() }
+                                ?.let { SlashCommand.valueOf(it) },
+                        selectedPresetId = saved[4].takeIf { it.isNotEmpty() },
+                        selectedModelId = saved[5],
+                    )
+                },
+            )
     }
 }
 
@@ -124,12 +134,13 @@ fun PromptInput(
     val outline = MaterialTheme.colorScheme.outlineVariant
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(surface)
-            .border(1.dp, outline, RoundedCornerShape(24.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(surface)
+                .border(1.dp, outline, RoundedCornerShape(24.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         SlashChipRow(state.activeSlash, onClear = {
             onStateChange(state.copy(activeSlash = null))
@@ -157,17 +168,21 @@ fun PromptInput(
 }
 
 @Composable
-private fun SlashChipRow(active: SlashCommand?, onClear: () -> Unit) {
+private fun SlashChipRow(
+    active: SlashCommand?,
+    onClear: () -> Unit,
+) {
     if (active == null) return
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(bottom = 6.dp),
     ) {
         Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             Text(
                 text = "/" + active.name.lowercase(),
@@ -178,9 +193,10 @@ private fun SlashChipRow(active: SlashCommand?, onClear: () -> Unit) {
         Spacer(Modifier.width(8.dp))
         Text(
             text = "tap to clear",
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -305,10 +321,11 @@ private fun CircleIconButton(
 ) {
     val bg = MaterialTheme.colorScheme.surface
     Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(bg),
+        modifier =
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(bg),
         contentAlignment = Alignment.Center,
     ) {
         IconButton(onClick = onClick, modifier = Modifier.size(36.dp)) {
@@ -319,9 +336,10 @@ private fun CircleIconButton(
                         trailing,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(10.dp)
-                            .align(Alignment.TopEnd),
+                        modifier =
+                            Modifier
+                                .size(10.dp)
+                                .align(Alignment.TopEnd),
                     )
                 }
             }
@@ -330,13 +348,17 @@ private fun CircleIconButton(
 }
 
 @Composable
-private fun SlashTrigger(active: SlashCommand?, onClick: () -> Unit) {
+private fun SlashTrigger(
+    active: SlashCommand?,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 12.dp),
+        modifier =
+            Modifier
+                .height(36.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -353,13 +375,17 @@ private fun SlashTrigger(active: SlashCommand?, onClick: () -> Unit) {
 }
 
 @Composable
-private fun PaletteButton(selected: Preset?, onClick: () -> Unit) {
+private fun PaletteButton(
+    selected: Preset?,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(start = 6.dp, end = 8.dp),
+        modifier =
+            Modifier
+                .height(36.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(start = 6.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PaletteSwatch(selected)
@@ -372,14 +398,16 @@ private fun PaletteButton(selected: Preset?, onClick: () -> Unit) {
 
 @Composable
 private fun PaletteSwatch(preset: Preset?) {
-    val colors = preset?.palette?.mapNotNull { hex -> parseHexColor(hex) }
-        ?: listOf(Color(0xFF1E88E5), Color(0xFFFFC107), Color(0xFF4CAF50), Color(0xFF111111))
+    val colors =
+        preset?.palette?.mapNotNull { hex -> parseHexColor(hex) }
+            ?: listOf(Color(0xFF1E88E5), Color(0xFFFFC107), Color(0xFF4CAF50), Color(0xFF111111))
     val safe = if (colors.isEmpty()) listOf(Color.Gray) else colors
     Box(
-        modifier = Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .background(Brush.sweepGradient(safe + safe.first())),
+        modifier =
+            Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(Brush.sweepGradient(safe + safe.first())),
     ) {
         if (preset == null) {
             Icon(
@@ -393,13 +421,17 @@ private fun PaletteSwatch(preset: Preset?) {
 }
 
 @Composable
-private fun ModelButton(label: String, onClick: () -> Unit) {
+private fun ModelButton(
+    label: String,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 12.dp),
+        modifier =
+            Modifier
+                .height(36.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -416,14 +448,18 @@ private fun ModelButton(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SendButton(enabled: Boolean, onClick: () -> Unit) {
+private fun SendButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
     val bg = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
     val fg = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(bg),
+        modifier =
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(bg),
         contentAlignment = Alignment.Center,
     ) {
         IconButton(onClick = { if (enabled) onClick() }, modifier = Modifier.size(36.dp)) {
@@ -433,7 +469,11 @@ private fun SendButton(enabled: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun AttachmentMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (AttachmentKind) -> Unit) {
+private fun AttachmentMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (AttachmentKind) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         DropdownMenuItem(
             text = { Text("Upload Files") },
@@ -455,7 +495,11 @@ private fun AttachmentMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (At
 }
 
 @Composable
-private fun SlashMenu(expanded: Boolean, onDismiss: () -> Unit, onPick: (SlashCommand) -> Unit) {
+private fun SlashMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (SlashCommand) -> Unit,
+) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         DropdownMenuItem(
             text = { Text("Image") },
@@ -544,12 +588,13 @@ private fun ModelMenu(
     }
 }
 
-private fun parseHexColor(hex: String): Color? = runCatching {
-    val cleaned = hex.removePrefix("#")
-    val long = cleaned.toLong(16)
-    when (cleaned.length) {
-        6 -> Color(0xFF000000 or long)
-        8 -> Color(long)
-        else -> null
-    }
-}.getOrNull()
+private fun parseHexColor(hex: String): Color? =
+    runCatching {
+        val cleaned = hex.removePrefix("#")
+        val long = cleaned.toLong(16)
+        when (cleaned.length) {
+            6 -> Color(0xFF000000 or long)
+            8 -> Color(long)
+            else -> null
+        }
+    }.getOrNull()

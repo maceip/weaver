@@ -44,7 +44,10 @@ import com.weaver.app.ui.theme.WeaverType
  * Dotted-grid canvas background; sits beneath every Weaver screen.
  */
 @Composable
-fun DottedCanvas(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun DottedCanvas(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     Box(modifier = modifier.fillMaxSize().background(Bg)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val step = 16.dp.toPx()
@@ -72,11 +75,15 @@ data class PillItem(
 )
 
 @Composable
-fun PillBar(items: List<PillItem>, modifier: Modifier = Modifier) {
+fun PillBar(
+    items: List<PillItem>,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items.forEach { Pill(it) }
@@ -86,11 +93,12 @@ fun PillBar(items: List<PillItem>, modifier: Modifier = Modifier) {
 @Composable
 fun Pill(item: PillItem) {
     Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(Color.White.copy(alpha = 0.045f))
-            .border(1.dp, if (item.active) LineStrong else Line, RoundedCornerShape(100.dp))
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(100.dp))
+                .background(Color.White.copy(alpha = 0.045f))
+                .border(1.dp, if (item.active) LineStrong else Line, RoundedCornerShape(100.dp))
+                .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -126,18 +134,21 @@ fun Artboard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .width(width).height(height)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Surface1)
-            .border(1.dp, if (active) LineStrong else Line, RoundedCornerShape(14.dp))
-            .alpha(if (peek) 0.85f else 1f),
+        modifier =
+            modifier
+                .width(width)
+                .height(height)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Surface1)
+                .border(1.dp, if (active) LineStrong else Line, RoundedCornerShape(14.dp))
+                .alpha(if (peek) 0.85f else 1f),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Surface2)
-                .padding(horizontal = 14.dp, vertical = 9.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(Surface2)
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -151,9 +162,10 @@ fun Artboard(
             Text(meta, style = WeaverType.MonoSmall)
         }
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             content = content,
         )

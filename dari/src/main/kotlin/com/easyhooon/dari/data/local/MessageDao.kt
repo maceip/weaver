@@ -7,7 +7,6 @@ import com.easyhooon.dari.MessageStatus
 
 @Dao
 internal interface MessageDao {
-
     @Query("SELECT * FROM messages ORDER BY requestTimestamp ASC")
     suspend fun getAll(): List<MessageEntity>
 
@@ -15,7 +14,7 @@ internal interface MessageDao {
     suspend fun insert(entity: MessageEntity): Long
 
     @Query(
-        "UPDATE messages SET responseData = :responseData, responseDataTruncated = :responseDataTruncated, status = :status, responseTimestamp = :responseTimestamp WHERE requestId = :requestId AND (tag = :tag OR (:tag IS NULL AND tag IS NULL))"
+        "UPDATE messages SET responseData = :responseData, responseDataTruncated = :responseDataTruncated, status = :status, responseTimestamp = :responseTimestamp WHERE requestId = :requestId AND (tag = :tag OR (:tag IS NULL AND tag IS NULL))",
     )
     suspend fun updateByRequestId(
         requestId: String,
@@ -27,7 +26,7 @@ internal interface MessageDao {
     )
 
     @Query(
-        "DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY requestTimestamp DESC LIMIT :maxEntries)"
+        "DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY requestTimestamp DESC LIMIT :maxEntries)",
     )
     suspend fun trimOldEntries(maxEntries: Int)
 

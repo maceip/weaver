@@ -10,7 +10,6 @@ import org.junit.Test
 
 /** The composer must survive rotation / process death with a half-typed prompt. */
 class PromptInputStateSaverTest {
-
     private val scope = SaverScope { true }
 
     private fun roundTrip(state: PromptInputState): PromptInputState {
@@ -21,9 +20,10 @@ class PromptInputStateSaverTest {
 
     @Test
     fun preservesTextAndCursorSelection() {
-        val original = PromptInputState(
-            text = TextFieldValue("make the header bolder", selection = TextRange(4, 7)),
-        )
+        val original =
+            PromptInputState(
+                text = TextFieldValue("make the header bolder", selection = TextRange(4, 7)),
+            )
         val restored = roundTrip(original)
         assertEquals("make the header bolder", restored.text.text)
         assertEquals(TextRange(4, 7), restored.text.selection)
@@ -37,9 +37,10 @@ class PromptInputStateSaverTest {
 
     @Test
     fun preservesPresetAndModelSelection() {
-        val restored = roundTrip(
-            PromptInputState(selectedPresetId = "bauhaus", selectedModelId = "gemini-3.1-flash"),
-        )
+        val restored =
+            roundTrip(
+                PromptInputState(selectedPresetId = "bauhaus", selectedModelId = "gemini-3.1-flash"),
+            )
         assertEquals("bauhaus", restored.selectedPresetId)
         assertEquals("gemini-3.1-flash", restored.selectedModelId)
     }

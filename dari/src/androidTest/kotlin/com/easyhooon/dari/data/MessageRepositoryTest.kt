@@ -17,7 +17,6 @@ import org.junit.Before
 import org.junit.Test
 
 class MessageRepositoryTest {
-
     private lateinit var database: DariDatabase
     private lateinit var repository: MessageRepository
 
@@ -25,10 +24,13 @@ class MessageRepositoryTest {
     fun setup() {
         // Uses in-memory database (not persisted to disk) for test isolation.
         // Automatically garbage-collected when the test instance is discarded.
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            DariDatabase::class.java,
-        ).allowMainThreadQueries().build()
+        database =
+            Room
+                .inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    DariDatabase::class.java,
+                ).allowMainThreadQueries()
+                .build()
         repository = MessageRepository(database, maxEntries = 3)
     }
 
@@ -46,7 +48,12 @@ class MessageRepositoryTest {
         repository.addEntry(entry)
 
         assertEquals(1, repository.entries.value.size)
-        assertEquals("1", repository.entries.value.first().requestId)
+        assertEquals(
+            "1",
+            repository.entries.value
+                .first()
+                .requestId,
+        )
     }
 
     @Test
@@ -76,7 +83,12 @@ class MessageRepositoryTest {
         repository.addEntry(createEntry("1"))
         repository.updateEntry("1") { it.copy(status = MessageStatus.SUCCESS) }
 
-        assertEquals(MessageStatus.SUCCESS, repository.entries.value.first().status)
+        assertEquals(
+            MessageStatus.SUCCESS,
+            repository.entries.value
+                .first()
+                .status,
+        )
     }
 
     @Test
@@ -100,25 +112,27 @@ class MessageRepositoryTest {
     }
 
     @Test
-    fun repository_restoresPersistedEntriesOnCreation() = runBlocking {
-        // Insert directly via DAO to guarantee persistence
-        val dao = database.messageDao()
-        withContext(Dispatchers.IO) {
-            dao.insert(createEntry("1").toEntity())
-            dao.insert(createEntry("2").toEntity())
+    fun repository_restoresPersistedEntriesOnCreation() =
+        runBlocking {
+            // Insert directly via DAO to guarantee persistence
+            val dao = database.messageDao()
+            withContext(Dispatchers.IO) {
+                dao.insert(createEntry("1").toEntity())
+                dao.insert(createEntry("2").toEntity())
+            }
+
+            repository.close()
+            val newRepository = MessageRepository(database, maxEntries = 3)
+            newRepository.initialized.await()
+
+            assertEquals(2, newRepository.entries.value.size)
+            newRepository.close()
         }
 
-        repository.close()
-        val newRepository = MessageRepository(database, maxEntries = 3)
-        newRepository.initialized.await()
-
-        assertEquals(2, newRepository.entries.value.size)
-        newRepository.close()
-    }
-
-    private fun createEntry(requestId: String) = MessageEntry(
-        requestId = requestId,
-        handlerName = "testHandler",
-        direction = MessageDirection.WEB_TO_APP,
-    )
+    private fun createEntry(requestId: String) =
+        MessageEntry(
+            requestId = requestId,
+            handlerName = "testHandler",
+            direction = MessageDirection.WEB_TO_APP,
+        )
 }

@@ -32,16 +32,17 @@ private data class ExportOption(
 
 // "What next" copy is the whole point — each row tells the user what they get,
 // so the decision is made in the sheet rather than after a mystery download.
-private val ExportOptions = listOf(
-    ExportOption(ExportKind.Figma, Icons.Filled.DesignServices, "Copy to Figma", "Paste the design into Figma to keep editing"),
-    ExportOption(ExportKind.Zip, Icons.Filled.FolderZip, "Download code", "Get the HTML/CSS bundle as a .zip"),
-    ExportOption(ExportKind.CopyCode, Icons.Filled.ContentCopy, "Copy code", "Copy the generated markup to the clipboard"),
-    ExportOption(ExportKind.AiStudio, Icons.Filled.AutoAwesome, "Google AI Studio", "Keep building with Gemini in AI Studio"),
-    ExportOption(ExportKind.Firebase, Icons.Filled.LocalFireDepartment, "Firebase", "Deploy straight to Firebase Hosting"),
-    ExportOption(ExportKind.Jules, Icons.Filled.SmartToy, "Jules", "Hand off to Jules, Google's coding agent"),
-    ExportOption(ExportKind.Lovable, Icons.Filled.Favorite, "Lovable", "Open the project in Lovable"),
-    ExportOption(ExportKind.Bolt, Icons.Filled.Bolt, "Bolt", "Open the project in Bolt.new"),
-)
+private val ExportOptions =
+    listOf(
+        ExportOption(ExportKind.Figma, Icons.Filled.DesignServices, "Copy to Figma", "Paste the design into Figma to keep editing"),
+        ExportOption(ExportKind.Zip, Icons.Filled.FolderZip, "Download code", "Get the HTML/CSS bundle as a .zip"),
+        ExportOption(ExportKind.CopyCode, Icons.Filled.ContentCopy, "Copy code", "Copy the generated markup to the clipboard"),
+        ExportOption(ExportKind.AiStudio, Icons.Filled.AutoAwesome, "Google AI Studio", "Keep building with Gemini in AI Studio"),
+        ExportOption(ExportKind.Firebase, Icons.Filled.LocalFireDepartment, "Firebase", "Deploy straight to Firebase Hosting"),
+        ExportOption(ExportKind.Jules, Icons.Filled.SmartToy, "Jules", "Hand off to Jules, Google's coding agent"),
+        ExportOption(ExportKind.Lovable, Icons.Filled.Favorite, "Lovable", "Open the project in Lovable"),
+        ExportOption(ExportKind.Bolt, Icons.Filled.Bolt, "Bolt", "Open the project in Bolt.new"),
+    )
 
 /**
  * Export picker anchored to the canvas toolbar. The recommended target is listed

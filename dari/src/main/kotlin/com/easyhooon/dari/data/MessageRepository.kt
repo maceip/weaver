@@ -1,10 +1,10 @@
 package com.easyhooon.dari.data
 
+import androidx.annotation.VisibleForTesting
 import com.easyhooon.dari.MessageEntry
 import com.easyhooon.dari.data.local.DariDatabase
 import com.easyhooon.dari.data.local.toEntity
 import com.easyhooon.dari.data.local.toMessageEntry
-import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +35,6 @@ class MessageRepository internal constructor(
     private val retentionPeriodMs: Long? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
-
     private val dao = database.messageDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -53,9 +52,10 @@ class MessageRepository internal constructor(
      * callers) is guaranteed to reflect the current `entries.size` without
      * waiting for a first subscriber to kick off the derivation.
      */
-    val messageCount: StateFlow<Int> = entries
-        .map { it.size }
-        .stateIn(scope, SharingStarted.Eagerly, 0)
+    val messageCount: StateFlow<Int> =
+        entries
+            .map { it.size }
+            .stateIn(scope, SharingStarted.Eagerly, 0)
 
     internal val initialized = CompletableDeferred<Unit>()
 
@@ -71,8 +71,7 @@ class MessageRepository internal constructor(
         }
     }
 
-    private fun retentionCutoff(): Long? =
-        RetentionPolicy.cutoff(clock(), retentionPeriodMs)
+    private fun retentionCutoff(): Long? = RetentionPolicy.cutoff(clock(), retentionPeriodMs)
 
     fun addEntry(entry: MessageEntry) {
         // Use negative timestamp as temporary id to avoid collision with auto-increment ids
@@ -99,7 +98,11 @@ class MessageRepository internal constructor(
         }
     }
 
-    fun updateEntry(requestId: String, tag: String? = null, transform: (MessageEntry) -> MessageEntry) {
+    fun updateEntry(
+        requestId: String,
+        tag: String? = null,
+        transform: (MessageEntry) -> MessageEntry,
+    ) {
         var updatedEntry: MessageEntry? = null
         _entries.update { current ->
             current.map { entry ->

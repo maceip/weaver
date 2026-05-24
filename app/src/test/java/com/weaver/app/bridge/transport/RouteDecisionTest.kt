@@ -5,7 +5,6 @@ import org.junit.Test
 
 /** Covers the routing-policy matrix: status × breaker for both backends. */
 class RouteDecisionTest {
-
     private fun decide(
         local: TransportStatus,
         remote: TransportStatus,
@@ -67,8 +66,10 @@ class RouteDecisionTest {
         assertEquals(
             RouteChoice.None,
             decide(
-                TransportStatus.Failed, TransportStatus.Failed,
-                localUsable = false, remoteUsable = false,
+                TransportStatus.Failed,
+                TransportStatus.Failed,
+                localUsable = false,
+                remoteUsable = false,
             ),
         )
     }

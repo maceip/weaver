@@ -25,13 +25,19 @@ data class FoldState(
 )
 
 /** Pure mapping of a [FoldingFeature] (if any) into a [FoldState]. */
-fun foldStateOf(fold: FoldingFeature?, widthPx: Int, heightPx: Int): FoldState =
+fun foldStateOf(
+    fold: FoldingFeature?,
+    widthPx: Int,
+    heightPx: Int,
+): FoldState =
     FoldState(
-        isFolded = fold?.state == FoldingFeature.State.FLAT &&
-            fold.orientation == FoldingFeature.Orientation.VERTICAL,
+        isFolded =
+            fold?.state == FoldingFeature.State.FLAT &&
+                fold.orientation == FoldingFeature.Orientation.VERTICAL,
         isHalfOpen = fold?.state == FoldingFeature.State.HALF_OPENED,
-        isTabletop = fold?.state == FoldingFeature.State.HALF_OPENED &&
-            fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
+        isTabletop =
+            fold?.state == FoldingFeature.State.HALF_OPENED &&
+                fold.orientation == FoldingFeature.Orientation.HORIZONTAL,
         widthPx = widthPx,
         heightPx = heightPx,
     )
@@ -40,7 +46,6 @@ class FoldObserver(
     private val activity: Activity,
     private val bridge: Bridge,
 ) {
-
     private val _state = MutableStateFlow(FoldState())
     val state: StateFlow<FoldState> = _state.asStateFlow()
 

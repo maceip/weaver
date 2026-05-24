@@ -48,17 +48,20 @@ class WebViewFileChooser(
     private var pendingWebViewCallback: ValueCallback<Array<Uri>>? = null
     private var singleSelect = false
 
-    private val pickMedia = activity.registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(),
-    ) { uris -> deliverToWebView(uris) }
+    private val pickMedia =
+        activity.registerForActivityResult(
+            ActivityResultContracts.PickMultipleVisualMedia(),
+        ) { uris -> deliverToWebView(uris) }
 
-    private val openDocuments = activity.registerForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris -> deliverToWebView(uris) }
+    private val openDocuments =
+        activity.registerForActivityResult(
+            ActivityResultContracts.OpenMultipleDocuments(),
+        ) { uris -> deliverToWebView(uris) }
 
-    private val uploadLauncher = activity.registerForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris -> ingestUris(uris) }
+    private val uploadLauncher =
+        activity.registerForActivityResult(
+            ActivityResultContracts.OpenMultipleDocuments(),
+        ) { uris -> ingestUris(uris) }
 
     /** Native-initiated upload — launch the system picker, inject what it returns. */
     fun requestUpload() {
@@ -75,14 +78,21 @@ class WebViewFileChooser(
         singleSelect = params.mode != WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
         val accepts = params.acceptTypes.orEmpty().toList()
         when (chooserTarget(accepts)) {
-            ChooserTarget.ImageOnly ->
+            ChooserTarget.ImageOnly -> {
                 pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-            ChooserTarget.VideoOnly ->
+            }
+
+            ChooserTarget.VideoOnly -> {
                 pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.VideoOnly))
-            ChooserTarget.ImageAndVideo ->
+            }
+
+            ChooserTarget.ImageAndVideo -> {
                 pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
-            ChooserTarget.Documents ->
+            }
+
+            ChooserTarget.Documents -> {
                 openDocuments.launch(mimeFilter(accepts))
+            }
         }
         return true
     }
@@ -111,28 +121,36 @@ class WebViewFileChooser(
         }
     }
 
-    private fun readFile(uri: Uri): AttachedFile? = runCatching {
-        val resolver = activity.contentResolver
-        val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
-        when {
-            bytes == null -> null
-            bytes.size > MAX_UPLOAD_BYTES -> {
-                Log.w(TAG, "skipping upload: ${bytes.size} bytes exceeds cap")
-                null
-            }
-            else -> AttachedFile(
-                name = displayName(uri) ?: "upload",
-                mime = resolver.getType(uri) ?: "application/octet-stream",
-                data = Base64.encodeToString(bytes, Base64.NO_WRAP),
-            )
-        }
-    }.getOrNull()
+    private fun readFile(uri: Uri): AttachedFile? =
+        runCatching {
+            val resolver = activity.contentResolver
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            when {
+                bytes == null -> {
+                    null
+                }
 
-    private fun displayName(uri: Uri): String? = runCatching {
-        activity.contentResolver
-            .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-            ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
-    }.getOrNull()
+                bytes.size > MAX_UPLOAD_BYTES -> {
+                    Log.w(TAG, "skipping upload: ${bytes.size} bytes exceeds cap")
+                    null
+                }
+
+                else -> {
+                    AttachedFile(
+                        name = displayName(uri) ?: "upload",
+                        mime = resolver.getType(uri) ?: "application/octet-stream",
+                        data = Base64.encodeToString(bytes, Base64.NO_WRAP),
+                    )
+                }
+            }
+        }.getOrNull()
+
+    private fun displayName(uri: Uri): String? =
+        runCatching {
+            activity.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+        }.getOrNull()
 }
 
 internal enum class ChooserTarget { ImageOnly, VideoOnly, ImageAndVideo, Documents }
