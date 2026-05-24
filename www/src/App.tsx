@@ -25,7 +25,10 @@ export default function App() {
 
       <section className="landing-hero">
         <span className="landing-eyebrow">Android · Google Stitch · Foldables</span>
-        <h1>Design on Stitch. Control it natively on foldables.</h1>
+        <h1>
+          Design on Stitch.
+          <span className="iridescent"> Control it natively on foldables.</span>
+        </h1>
         <p>
           Stitch is the native Android companion for Google Stitch. It mirrors the editor canvas, routes prompts
           through a real WebView session, and adapts the UI to hinge posture — tabletop, fold-to-compare, and
@@ -39,6 +42,16 @@ export default function App() {
             Read docs
           </a>
         </div>
+      </section>
+
+      {/* Scroll-animated Pixel Fold 3D — sticky inside, 640svh tall outside */}
+      <section className="fold-stage" aria-label="Pixel Fold showtime">
+        <pixel-fold-showtime
+          model-url="/3d/assets/pixel10_fold_v18.glb"
+          environment-url="/3d/assets/studio-softbox.hdr"
+          draco-decoder-path="/3d/vendor/three/examples/jsm/libs/draco/gltf/"
+          ktx2-transcoder-path="/3d/vendor/three/examples/jsm/libs/basis/"
+        ></pixel-fold-showtime>
       </section>
 
       <div className="landing-features" id="features">

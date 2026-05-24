@@ -2,10 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/stitch/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Stitch — native Android companion for Google Stitch on foldables." />
-    <title>Stitch · Google Stitch on foldables</title>
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>Stitch</title>
+    <meta name="description" content="your mobile design magician" />
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://stitch.secure.build/" />
+    <meta property="og:title"       content="Stitch" />
+    <meta property="og:description" content="your mobile design magician" />
+    <meta property="og:image"       content="https://stitch.secure.build/og.webp" />
+    <meta property="og:image:type"  content="image/webp" />
+    <meta property="og:image:width"  content="1122" />
+    <meta property="og:image:height" content="1402" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="Stitch" />
+    <meta name="twitter:description" content="your mobile design magician" />
+    <meta name="twitter:image"       content="https://stitch.secure.build/og.webp" />
+
+    <!-- Three.js for the <pixel-fold-showtime> web component -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/3d/vendor/three/build/three.module.js",
+          "three/addons/": "/3d/vendor/three/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="/3d/src/pixel-fold-showtime.js"></script>
   </head>
   <body>
     <div id="root"></div>
