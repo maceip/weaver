@@ -11,7 +11,7 @@ export function SpaceCanvas({ variant, title, compact, className = '' }: SpaceCa
     <div
       className={`space-canvas space-canvas--${variant} ${compact ? 'space-canvas--compact' : ''} ${className}`}
       role="img"
-      aria-label={title ?? (isA ? 'Design A' : 'Design B')}
+      aria-label={title ?? (isA ? 'Checkout flow' : 'Settings hub')}
     >
       <div className="space-canvas__stars" />
       <div className="space-canvas__planet" />
@@ -19,10 +19,10 @@ export function SpaceCanvas({ variant, title, compact, className = '' }: SpaceCa
       <div className="space-canvas__sparkles" />
       {!compact && (
         <>
-          <p className="space-canvas__title">{title ?? (isA ? 'Explore New Horizons' : 'Starship Vector-7')}</p>
+          <p className="space-canvas__title">{title ?? (isA ? 'Checkout flow' : 'Settings hub')}</p>
           <div className="space-canvas__actions">
-            <span>Get Started</span>
-            <span className="space-canvas__ghost">Learn More</span>
+            <span>Continue</span>
+            <span className="space-canvas__ghost">Save changes</span>
           </div>
         </>
       )}

@@ -77,7 +77,7 @@ export function FoldToCompareDemo() {
 
   return (
     <div className="demo">
-      <DemoShell className="demo-stage--compare" hint="Resize the box · drag the hinge track · use the slider">
+      <DemoShell className="demo-stage--compare">
         <div className="compare-triptych" aria-hidden>
           <DevicePreview angle={180} active={stage === 'flat'} />
           <DevicePreview angle={135} active={stage === 'folding'} />

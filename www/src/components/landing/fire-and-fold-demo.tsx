@@ -63,7 +63,7 @@ export function FireAndFoldDemo() {
 
   return (
     <div className="demo">
-      <DemoShell className="demo-stage--fire" hint="Resize · tap steps or Play flow · Fire prompt on step 1">
+      <DemoShell className="demo-stage--fire">
         <div className="fire-flow">
           <div className={`fire-step ${step === 0 ? 'fire-step--active' : ''}`}>
             <FoldableDevice
@@ -136,9 +136,9 @@ export function FireAndFoldDemo() {
               posture="flat"
               topPanel={
                 <div className="weaver-results">
-                  <SpaceCanvas variant="b" title="Starship Vector-7" />
+                  <SpaceCanvas variant="b" title="Wallet home" />
                   <div className="weaver-results__grid">
-                    {['Lunar Outpost', 'Nebula Rift', 'Atlas Prime'].map((t) => (
+                    {['Trip summary', 'Notifications', 'Profile'].map((t) => (
                       <div key={t} className="result-card">
                         <div className="result-card__thumb" />
                         <span>{t}</span>

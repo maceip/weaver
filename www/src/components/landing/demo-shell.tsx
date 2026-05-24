@@ -15,7 +15,7 @@ export function DemoShell({ children, className = '', hint }: DemoShellProps) {
         {children}
         <span className="demo-shell__grip" aria-hidden />
       </div>
-      <p className="demo-shell__hint">{hint ?? 'Drag the corner to resize · all UI is vector/CSS'}</p>
+      {import.meta.env.DEV && hint ? <p className="demo-shell__hint">{hint}</p> : null}
     </div>
   );
 }

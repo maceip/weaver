@@ -10,6 +10,7 @@ declare module 'react' {
           'environment-url'?: string
           'draco-decoder-path'?: string
           'ktx2-transcoder-path'?: string
+          'fallback-image-url'?: string
           'exit-mode'?: string
         },
         HTMLElement

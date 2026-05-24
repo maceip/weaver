@@ -19,6 +19,7 @@ class PixelFoldShowtime extends HTMLElement {
     "environment-url",
     "draco-decoder-path",
     "ktx2-transcoder-path",
+    "fallback-image-url",
     "exit-mode",
   ];
 
@@ -29,6 +30,7 @@ class PixelFoldShowtime extends HTMLElement {
     this.environmentUrl = "./assets/studio-softbox.hdr";
     this.dracoDecoderPath = "./vendor/three/examples/jsm/libs/draco/gltf/";
     this.ktx2TranscoderPath = "./vendor/three/examples/jsm/libs/basis/";
+    this.fallbackImageUrl = "/hero.webp";
     this.exitMode = "fog";
     this.progress = 0;
     this.smoothProgress = 0;
@@ -50,9 +52,15 @@ class PixelFoldShowtime extends HTMLElement {
     this.environmentUrl = this.getAttribute("environment-url") || this.environmentUrl;
     this.dracoDecoderPath = this.getAttribute("draco-decoder-path") || this.dracoDecoderPath;
     this.ktx2TranscoderPath = this.getAttribute("ktx2-transcoder-path") || this.ktx2TranscoderPath;
+    this.fallbackImageUrl = this.getAttribute("fallback-image-url") || this.fallbackImageUrl;
     this.exitMode = this.getAttribute("exit-mode") || this.exitMode;
     this.renderShell();
+    if (!this.canUseWebGL()) {
+      this.enableFallback("webgl");
+      return;
+    }
     this.mountThree();
+    if (this.hasAttribute("data-error")) return;
     this.bindEvents();
     this.loadModel();
     this.updateScroll();
@@ -86,6 +94,11 @@ class PixelFoldShowtime extends HTMLElement {
     if (name === "ktx2-transcoder-path" && oldValue !== newValue && newValue) {
       this.ktx2TranscoderPath = newValue;
     }
+    if (name === "fallback-image-url" && oldValue !== newValue && newValue) {
+      this.fallbackImageUrl = newValue;
+      const img = this.shadowRoot?.querySelector(".fallback-hero");
+      if (img) img.src = newValue;
+    }
     if (name === "exit-mode" && oldValue !== newValue && newValue) {
       this.exitMode = newValue;
     }
@@ -98,11 +111,20 @@ class PixelFoldShowtime extends HTMLElement {
           display: block;
           position: relative;
           color: #15181d;
+          min-height: 640svh;
           background:
             radial-gradient(circle at 18% 16%, rgba(255,255,255,0.86), rgba(255,255,255,0) 24rem),
             radial-gradient(circle at 82% 70%, rgba(153,169,184,0.45), rgba(153,169,184,0) 32rem),
             linear-gradient(145deg, #eef1f4 0%, #c7cfd7 44%, #f4f6f7 100%);
           overflow: clip;
+        }
+
+        :host([data-error]) {
+          min-height: auto;
+        }
+
+        :host([data-reduced-motion]) {
+          min-height: 100svh;
         }
 
         .stage {
@@ -287,6 +309,53 @@ class PixelFoldShowtime extends HTMLElement {
           display: none;
         }
 
+        :host([data-error]) .stage {
+          position: relative;
+          height: min(72svh, 560px);
+          min-height: 420px;
+        }
+
+        :host([data-error]) canvas,
+        :host([data-error]) .scroll-hint,
+        :host([data-error]) .meter {
+          display: none;
+        }
+
+        .scroll-hint {
+          position: absolute;
+          left: 50%;
+          bottom: clamp(20px, 4vw, 40px);
+          z-index: 3;
+          transform: translateX(-50%);
+          padding: 0.45rem 0.9rem;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.82);
+          border: 1px solid rgba(25, 29, 34, 0.08);
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: rgba(25, 29, 34, 0.78);
+          letter-spacing: 0.01em;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+
+        .fallback-hero {
+          display: none;
+          position: absolute;
+          inset: clamp(16px, 4vw, 48px);
+          z-index: 2;
+          width: calc(100% - clamp(32px, 8vw, 96px));
+          height: calc(100% - clamp(32px, 8vw, 96px));
+          margin: auto;
+          object-fit: contain;
+          object-position: center;
+          filter: drop-shadow(0 24px 48px rgba(15, 17, 21, 0.12));
+        }
+
+        :host([data-error]) .fallback-hero {
+          display: block;
+        }
+
         .fallback {
           position: absolute;
           inset: auto clamp(24px, 6vw, 80px) clamp(32px, 8vw, 96px);
@@ -300,6 +369,13 @@ class PixelFoldShowtime extends HTMLElement {
 
         :host([data-error]) .fallback {
           visibility: visible;
+          inset: auto clamp(24px, 6vw, 80px) clamp(18px, 4vw, 28px);
+          text-align: center;
+          max-width: none;
+          left: clamp(24px, 6vw, 80px);
+          right: clamp(24px, 6vw, 80px);
+          font-size: 14px;
+          color: rgba(25,29,34,0.62);
         }
       </style>
       <div class="stage">
@@ -310,17 +386,47 @@ class PixelFoldShowtime extends HTMLElement {
         <div class="transition-sheen"></div>
         <div class="screen-takeover" aria-hidden="true"></div>
         <div class="brand">Pixel 10 Pro Fold</div>
+        <div class="scroll-hint">Scroll to fold the Pixel 10 Pro Fold</div>
         <div class="meter" aria-hidden="true"><span></span></div>
         <div class="grain"></div>
-        <div class="fallback">The 3D model could not be loaded in this browser session.</div>
+        <img class="fallback-hero" alt="" decoding="async" />
+        <div class="fallback">Interactive 3D preview unavailable — showing a still frame.</div>
       </div>
     `;
 
     this.stage = this.shadowRoot.querySelector(".stage");
     this.canvas = this.shadowRoot.querySelector("canvas");
+    const fallbackHero = this.shadowRoot.querySelector(".fallback-hero");
+    if (fallbackHero) fallbackHero.src = this.fallbackImageUrl;
+    if (this.reducedMotion.matches) this.setAttribute("data-reduced-motion", "");
+    this.reducedMotion.addEventListener?.("change", (event) => {
+      if (event.matches) this.setAttribute("data-reduced-motion", "");
+      else this.removeAttribute("data-reduced-motion");
+    });
+  }
+
+  canUseWebGL() {
+    try {
+      const canvas = document.createElement("canvas");
+      return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+    } catch {
+      return false;
+    }
+  }
+
+  enableFallback() {
+    if (this.hasAttribute("data-error")) return;
+    this.setAttribute("data-error", "");
+    cancelAnimationFrame(this.frame);
+    window.removeEventListener("scroll", this.handleScroll);
+    window.removeEventListener("pointermove", this.handlePointerMove);
+    this.resizeObserver?.disconnect();
+    const img = this.shadowRoot?.querySelector(".fallback-hero");
+    if (img) img.src = this.fallbackImageUrl;
   }
 
   mountThree() {
+    try {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xdce1e6);
     this.scene.fog = new THREE.FogExp2(0xd9dee4, 0.011);
@@ -382,6 +488,9 @@ class PixelFoldShowtime extends HTMLElement {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.stage);
     this.resize();
+    } catch {
+      this.enableFallback();
+    }
   }
 
   bindEvents() {
@@ -412,7 +521,7 @@ class PixelFoldShowtime extends HTMLElement {
       (gltf) => this.prepareModel(gltf.scene),
       undefined,
       () => {
-        this.setAttribute("data-error", "");
+        this.enableFallback();
       },
     );
   }

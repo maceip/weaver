@@ -20,8 +20,10 @@ export function FeatureSection({
   return (
     <section className="landing-feature" id={title.toLowerCase().replace(/\s+/g, '-')}>
       <div className="landing-feature-head">
-        <p className="landing-feature-kicker">{subtitle}</p>
-        <h2 className="landing-feature-title">Stitch · Foldable Features</h2>
+        <p className="landing-feature-kicker">
+          {subtitle} · <span className="landing-feature-series">Stitch foldables</span>
+        </p>
+        <h2 className="landing-feature-title">{title}</h2>
         <div className="landing-feature-banner">
           <strong>
             {index} — {title}

@@ -154,7 +154,6 @@ export function TabletopStudioDemo() {
             ))}
           </aside>
         </div>
-        <p className="demo-caption">Drag v1–v5 onto the canvas · move pointer on canvas for parallax · send a prompt</p>
       </DemoShell>
     </div>
   );

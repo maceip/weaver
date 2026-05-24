@@ -63,6 +63,14 @@ body::before {
   letter-spacing: -0.02em;
 }
 
+.landing-logo-img {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.2);
+}
+
 .landing-logo-mark {
   width: 2.25rem;
   height: 2.25rem;
@@ -109,6 +117,15 @@ body::before {
   letter-spacing: -0.03em;
   line-height: 1.08;
   margin: 0 0 1rem;
+}
+
+.landing-hero-lead {
+  max-width: 36rem;
+  margin: 0 auto 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
 }
 
 .landing-hero p {
@@ -245,6 +262,30 @@ body::before {
 
 .landing-feature-visual--interactive {
   overflow: visible;
+}
+
+.landing-feature-series {
+  color: var(--purple);
+  font-weight: 600;
+}
+
+.landing-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.landing-footer-nav a {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.landing-footer-nav a:hover {
+  color: var(--purple);
 }
 
 .landing-footer {
