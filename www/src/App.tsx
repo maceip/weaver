@@ -4,6 +4,7 @@ import { FireAndFoldDemo } from './components/landing/fire-and-fold-demo';
 import { FoldToCompareDemo } from './components/landing/fold-to-compare-demo';
 import { TabletopStudioDemo } from './components/landing/tabletop-studio-demo';
 import { SiteHeader } from './components/site-header';
+import { PlayStoreBeta } from './components/play-store-beta';
 import { usePointerGlow } from './hooks/use-pointer-glow';
 import './landing.css';
 
@@ -33,6 +34,7 @@ export default function App() {
             posture — tabletop, fold-to-compare, and fire-and-fold handoff to the cover screen.
           </p>
           <div className="landing-cta">
+            <PlayStoreBeta />
             <a className="landing-btn landing-btn-primary" href={RELEASES_URL}>
               Download APK
             </a>

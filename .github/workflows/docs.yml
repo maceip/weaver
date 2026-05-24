@@ -53,6 +53,9 @@ jobs:
 
       - name: Build marketing site
         working-directory: www
+        env:
+          VITE_BETA_NOTIFY_EMAIL: ${{ secrets.BETA_NOTIFY_EMAIL }}
+          VITE_BETA_WAITLIST_ENDPOINT: ${{ secrets.BETA_WAITLIST_ENDPOINT }}
         run: |
           npm ci
           mkdir -p public/docs
