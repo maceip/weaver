@@ -8,12 +8,12 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://maceip.github.io'),
-  title: 'Weaver — Stitch companion for Android foldables',
+  title: 'Stitch — Google Stitch on Android foldables',
   description:
     'Native Android client for Google Stitch with fold-aware tabletop studio, fold-to-compare, and fire-and-fold cover handoff.',
   openGraph: {
-    url: 'https://maceip.github.io/weaver',
-    siteName: 'Weaver',
+    url: 'https://maceip.github.io/stitch',
+    siteName: 'Stitch',
     type: 'website',
   },
 };

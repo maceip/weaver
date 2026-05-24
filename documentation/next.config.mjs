@@ -5,7 +5,7 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: '/weaver',
+  basePath: '/stitch',
   images: {
     unoptimized: true,
   },

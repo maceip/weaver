@@ -1,23 +1,23 @@
-# Weaver site (GitHub Pages)
+# Stitch site (GitHub Pages)
 
 ## URL
 
-After Pages is enabled on `maceip/weaver` and `main` deploys:
+After Pages is enabled on `maceip/stitch` and `main` deploys:
 
-**https://maceip.github.io/weaver/**
+**https://maceip.github.io/stitch/**
 
 ## Enable Pages (one-time)
 
-1. GitHub → **maceip/weaver** → **Settings** → **Pages**
-2. Source: **GitHub Actions** (the `Documentation` workflow deploys `documentation/out`)
+1. GitHub → **maceip/stitch** → **Settings** → **Pages**
+2. Source: **GitHub Actions** (the `Website` workflow deploys `www/dist`)
 
 ## Local preview
 
 ```bash
-cd documentation
+cd www
 npm install
 npm run dev
-# open http://localhost:3000/weaver
+# open http://localhost:5173/stitch/
 ```
 
 ## Interactive feature demos

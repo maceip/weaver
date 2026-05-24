@@ -5,7 +5,7 @@ import { FoldToCompareDemo } from '../components/landing/fold-to-compare-demo';
 import { TabletopStudioDemo } from '../components/landing/tabletop-studio-demo';
 import './landing.css';
 
-const BASE = '/weaver';
+const BASE = '/stitch';
 
 export default function HomePage() {
   return (
@@ -13,12 +13,12 @@ export default function HomePage() {
       <header className="landing-header">
         <div className="landing-logo">
           <span className="landing-logo-mark" aria-hidden />
-          <span>Weaver</span>
+          <span>Stitch</span>
         </div>
         <nav className="landing-nav" aria-label="Primary">
           <a href="#features">Features</a>
           <Link href="/docs">Docs</Link>
-          <a href="https://github.com/maceip/weaver" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/maceip/stitch" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
         </nav>
@@ -28,13 +28,13 @@ export default function HomePage() {
         <span className="landing-eyebrow">Android · Google Stitch · Foldables</span>
         <h1>Design on Stitch. Control it natively on foldables.</h1>
         <p>
-          Weaver is a native Android companion for Google Stitch. It mirrors the editor canvas,
+          Stitch is the native Android companion for Google Stitch. It mirrors the editor canvas,
           routes prompts through a real WebView session, and adapts the UI to hinge posture — tabletop,
           fold-to-compare, and fire-and-fold handoff to the cover screen.
         </p>
         <div className="landing-cta">
-          <a className="landing-btn landing-btn-primary" href="https://github.com/maceip/weaver">
-            View on GitHub
+          <a className="landing-btn landing-btn-primary" href="https://github.com/maceip/stitch/releases/latest">
+            Download APK
           </a>
           <Link className="landing-btn landing-btn-secondary" href="/docs">
             Read docs
@@ -76,8 +76,8 @@ export default function HomePage() {
 
       <footer className="landing-footer">
         <p>
-          Weaver ·{' '}
-          <a href="https://github.com/maceip/weaver">maceip/weaver</a>
+          Stitch ·{' '}
+          <a href="https://github.com/maceip/stitch">maceip/stitch</a>
           {' · '}
           <a href={`${BASE}/docs`}>documentation</a>
         </p>

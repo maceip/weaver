@@ -71,6 +71,8 @@ secrets.properties
 
 # Documentation (Next.js)
 documentation/node_modules/
+www/node_modules/
+www/dist/
 documentation/.next/
 documentation/out/
 documentation/.source/

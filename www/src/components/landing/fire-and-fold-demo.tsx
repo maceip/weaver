@@ -72,7 +72,7 @@ export function FireAndFoldDemo() {
                 <div className="weaver-inner">
                   <header className="weaver-inner__bar">
                     <AgentOrb size={28} />
-                    <span>Weaver</span>
+                    <span>Stitch</span>
                   </header>
                   <SpaceCanvas variant="a" />
                   <form
@@ -207,7 +207,7 @@ function CoverScreen({
     <button type="button" className="cover-screen" onClick={onTap}>
       <header className="cover-screen__head">
         <AgentOrb size={24} active={mode === 'progress'} />
-        <span>Weaver</span>
+        <span>Stitch</span>
       </header>
       {mode === 'progress' ? (
         <>
