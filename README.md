@@ -1,10 +1,16 @@
-# Stitch
+<p align="center">
+  <img src="docs/assets/logo.webp" alt="Stitch" width="160" height="160" />
+</p>
 
-[![Build & Release](https://img.shields.io/github/actions/workflow/status/maceip/stitch/build-apk.yml?branch=main&label=build)](https://github.com/maceip/stitch/actions/workflows/build-apk.yml)
-[![Website](https://img.shields.io/github/actions/workflow/status/maceip/stitch/docs.yml?branch=main&label=site)](https://github.com/maceip/stitch/actions/workflows/docs.yml)
-[![Latest release](https://img.shields.io/github/v/release/maceip/stitch?include_prereleases)](https://github.com/maceip/stitch/releases)
-[![License](https://img.shields.io/github/license/maceip/stitch)](LICENSE)
-[![Android API](https://img.shields.io/badge/Android-API_34%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
+<h1 align="center">Stitch</h1>
+
+<p align="center">
+  <a href="https://github.com/maceip/stitch/actions/workflows/build-apk.yml"><img alt="Build & Release" src="https://img.shields.io/github/actions/workflow/status/maceip/stitch/build-apk.yml?branch=main&label=build" /></a>
+  <a href="https://github.com/maceip/stitch/actions/workflows/docs.yml"><img alt="Website" src="https://img.shields.io/github/actions/workflow/status/maceip/stitch/docs.yml?branch=main&label=site" /></a>
+  <a href="https://github.com/maceip/stitch/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/maceip/stitch?include_prereleases" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/maceip/stitch" /></a>
+  <a href="https://developer.android.com/"><img alt="Android API" src="https://img.shields.io/badge/Android-API_34%2B-3DDC84?logo=android&logoColor=white" /></a>
+</p>
 
 > Multi-screen design studio for Android foldables. Prompt the layout, ship the pixel.
 
