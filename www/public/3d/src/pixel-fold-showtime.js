@@ -40,8 +40,10 @@ class PixelFoldShowtime extends HTMLElement {
     this.innerOnlyMeshes = [];
     this.screenZoomShellMeshes = [];
     this.screenZoomCoreMeshes = [];
+    this.innerPresentationMaterials = [];
     this.satinNormalTexture = null;
     this.satinRoughnessTexture = null;
+    this.screenSheenTexture = null;
     this.clock = new THREE.Clock();
     this.frame = 0;
     this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -75,6 +77,7 @@ class PixelFoldShowtime extends HTMLElement {
     this.environmentTexture?.dispose();
     this.satinNormalTexture?.dispose();
     this.satinRoughnessTexture?.dispose();
+    this.screenSheenTexture?.dispose();
     this.dracoLoader?.dispose();
     this.ktx2Loader?.dispose();
     this.renderer?.dispose();
@@ -113,9 +116,9 @@ class PixelFoldShowtime extends HTMLElement {
           color: #15181d;
           min-height: 280svh;
           background:
-            radial-gradient(circle at 18% 16%, rgba(255,255,255,0.86), rgba(255,255,255,0) 24rem),
-            radial-gradient(circle at 82% 70%, rgba(153,169,184,0.45), rgba(153,169,184,0) 32rem),
-            linear-gradient(145deg, #eef1f4 0%, #c7cfd7 44%, #f4f6f7 100%);
+            radial-gradient(circle at 20% 14%, rgba(255,255,255,0.92), rgba(255,255,255,0) 25rem),
+            radial-gradient(circle at 78% 68%, rgba(134,149,164,0.34), rgba(134,149,164,0) 34rem),
+            linear-gradient(145deg, #f2f4f6 0%, #d3d9df 46%, #f7f8f9 100%);
           overflow: clip;
         }
 
@@ -171,8 +174,8 @@ class PixelFoldShowtime extends HTMLElement {
         .wash {
           z-index: -3;
           background:
-            linear-gradient(100deg, rgba(255,255,255,0.72), rgba(255,255,255,0) 36%),
-            linear-gradient(260deg, rgba(109,123,137,0.24), rgba(109,123,137,0) 45%);
+            linear-gradient(104deg, rgba(255,255,255,0.82), rgba(255,255,255,0) 34%),
+            linear-gradient(260deg, rgba(104,117,130,0.18), rgba(104,117,130,0) 46%);
           transform: translate3d(var(--wash-x, 0px), var(--wash-y, 0px), 0) scale(1.08);
         }
 
@@ -357,6 +360,13 @@ class PixelFoldShowtime extends HTMLElement {
           -webkit-backdrop-filter: blur(8px);
         }
 
+        :host(:not([data-error])) .brand,
+        :host(:not([data-error])) .scroll-hint,
+        :host(:not([data-error])) .meter {
+          opacity: 0;
+          visibility: hidden;
+        }
+
         .fallback-hero {
           display: none;
           position: absolute;
@@ -461,9 +471,13 @@ class PixelFoldShowtime extends HTMLElement {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.06;
+    this.renderer.toneMappingExposure = 1.18;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.VSMShadowMap;
+    if ("useLegacyLights" in this.renderer) this.renderer.useLegacyLights = false;
     this.satinNormalTexture = this.createSatinNormalTexture();
     this.satinRoughnessTexture = this.createSatinRoughnessTexture();
+    this.screenSheenTexture = this.createScreenSheenTexture();
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(this.renderer), 0.04).texture;
@@ -472,30 +486,44 @@ class PixelFoldShowtime extends HTMLElement {
 
     RectAreaLightUniformsLib.init();
 
-    this.scene.add(new THREE.HemisphereLight(0xf8fbff, 0x7d8793, 0.32));
+    this.scene.add(new THREE.HemisphereLight(0xf8fbff, 0x6f7985, 0.24));
 
-    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.08);
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.34);
     this.keyLight.position.set(3.2, 4.4, 5.2);
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.set(1024, 1024);
+    this.keyLight.shadow.radius = 3.5;
+    this.keyLight.shadow.camera.near = 1;
+    this.keyLight.shadow.camera.far = 12;
+    this.keyLight.shadow.camera.left = -3;
+    this.keyLight.shadow.camera.right = 3;
+    this.keyLight.shadow.camera.top = 3;
+    this.keyLight.shadow.camera.bottom = -3;
     this.scene.add(this.keyLight);
 
-    this.rimLight = new THREE.DirectionalLight(0xc6dcff, 0.78);
+    this.rimLight = new THREE.DirectionalLight(0xcfe2ff, 1.06);
     this.rimLight.position.set(-4.2, 1.4, -2.8);
     this.scene.add(this.rimLight);
 
-    this.cameraBumpStripLight = new THREE.RectAreaLight(0xffffff, 1.95, 2.7, 0.42);
+    this.cameraBumpStripLight = new THREE.RectAreaLight(0xffffff, 3.2, 2.45, 0.24);
     this.cameraBumpStripLight.position.set(-1.85, 2.35, 3.0);
     this.cameraBumpStripLight.lookAt(-0.25, 0.18, 0);
     this.scene.add(this.cameraBumpStripLight);
 
-    this.edgeGrazingLight = new THREE.RectAreaLight(0xd8e7ff, 1.85, 0.26, 2.9);
+    this.edgeGrazingLight = new THREE.RectAreaLight(0xe2edff, 3.25, 0.18, 3.2);
     this.edgeGrazingLight.position.set(2.2, -0.9, 2.8);
     this.edgeGrazingLight.lookAt(0.1, 0.0, 0);
     this.scene.add(this.edgeGrazingLight);
 
-    this.backSilkLight = new THREE.RectAreaLight(0xffffff, 2.15, 4.8, 0.82);
+    this.backSilkLight = new THREE.RectAreaLight(0xffffff, 3.1, 5.2, 0.52);
     this.backSilkLight.position.set(-0.65, 2.8, 2.45);
     this.backSilkLight.lookAt(-0.15, 0.0, 0);
     this.scene.add(this.backSilkLight);
+
+    this.lensGlintLight = new THREE.RectAreaLight(0xffffff, 4.4, 1.0, 0.08);
+    this.lensGlintLight.position.set(-1.2, 1.0, 3.35);
+    this.lensGlintLight.lookAt(-0.42, 0.18, 0);
+    this.scene.add(this.lensGlintLight);
 
     this.showGroup = new THREE.Group();
     this.phoneGroup = new THREE.Group();
@@ -586,6 +614,7 @@ class PixelFoldShowtime extends HTMLElement {
     this.hingeCenter = hingeCenter.clone();
     const size = centeredBox.getSize(new THREE.Vector3());
     this.baseScale = 2.15 / Math.max(size.x, size.z, 0.001);
+    this.createInnerCreaseBridge(asset, hingeCenter);
 
     this.leftPivot.position.copy(hingeCenter);
     this.rightPivot.position.copy(hingeCenter);
@@ -599,6 +628,7 @@ class PixelFoldShowtime extends HTMLElement {
       if (!node.isMesh) return;
       node.castShadow = true;
       node.receiveShadow = true;
+      this.prepareGeometry(node);
       if (this.isInnerOnlyMesh(node.name)) {
         this.innerOnlyMeshes.push(node);
       }
@@ -622,6 +652,8 @@ class PixelFoldShowtime extends HTMLElement {
       if (bucket === "right") this.rightPivot.attach(mesh);
       if (bucket === "hinge") this.hingeGroup.attach(mesh);
     });
+
+    meshes.forEach((mesh) => this.addSurfaceAccents(mesh));
 
     this.phoneGroup.rotation.x = Math.PI / 2;
     this.phoneGroup.scale.setScalar(this.baseScale * 0.34);
@@ -656,6 +688,85 @@ class PixelFoldShowtime extends HTMLElement {
       }
     });
     rejected.forEach((node) => node.parent?.remove(node));
+  }
+
+  prepareGeometry(mesh) {
+    if (!mesh.geometry) return;
+    mesh.geometry.computeVertexNormals();
+    mesh.geometry.normalizeNormals?.();
+    if (mesh.geometry.attributes.normal) {
+      mesh.geometry.attributes.normal.needsUpdate = true;
+    }
+  }
+
+  addSurfaceAccents(mesh) {
+    const name = mesh.name.toLowerCase();
+    if (this.isDisplayGlassMesh(name)) {
+      this.addGlassSheen(mesh, name.includes("cover_screen") ? 0.2 : 0.14);
+    }
+  }
+
+  createInnerCreaseBridge(asset, hingeCenter) {
+    const screenBox = this.getNamedBox(asset, (name) => name.includes("screen_inner_"));
+    if (!screenBox) return;
+    const screenSize = screenBox.getSize(new THREE.Vector3());
+    const screenCenter = screenBox.getCenter(new THREE.Vector3());
+    const material = new THREE.MeshPhysicalMaterial({
+      name: "runtime_inner_screen_crease_bridge",
+      color: 0x121a26,
+      metalness: 0,
+      roughness: 0.12,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 2.7,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const bridge = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.max(screenSize.x * 0.035, 0.034), screenSize.y * 0.92),
+      material,
+    );
+    bridge.name = "runtime_inner_screen_crease_bridge";
+    bridge.position.set(hingeCenter.x, screenCenter.y, screenBox.max.z + 0.003);
+    bridge.renderOrder = 9;
+    bridge.visible = false;
+    bridge.castShadow = false;
+    bridge.receiveShadow = false;
+    this.phoneGroup.add(bridge);
+    this.innerCreaseBridge = bridge;
+    this.innerPresentationMaterials.push(material);
+    this.screenZoomCoreMeshes.push(bridge);
+  }
+
+  addGlassSheen(mesh, opacity) {
+    if (!mesh.geometry || !this.screenSheenTexture) return;
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    if (!box) return;
+    const size = box.getSize(new THREE.Vector3());
+    if (size.x < 0.05 || size.y < 0.05) return;
+    const center = box.getCenter(new THREE.Vector3());
+    const material = new THREE.MeshBasicMaterial({
+      map: this.screenSheenTexture,
+      color: 0xffffff,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
+    const sheen = new THREE.Mesh(new THREE.PlaneGeometry(size.x * 0.94, size.y * 0.94), material);
+    sheen.name = `${mesh.name}_studio_glass_sheen`;
+    sheen.position.set(center.x, center.y, box.max.z + 0.0018);
+    sheen.renderOrder = 12;
+    sheen.castShadow = false;
+    sheen.receiveShadow = false;
+    mesh.add(sheen);
+    this.meshMaterials.push(material);
   }
 
   prepareMaterial(mesh) {
@@ -705,21 +816,21 @@ class PixelFoldShowtime extends HTMLElement {
       const setMoonstone = () => {
         ensurePhysical();
         clearTextureMaps();
-        next.color?.set(0xadb5c1);
+        next.color?.set(0xb0b7c1);
         next.metalness = 0;
-        next.roughness = 0.38;
-        next.envMapIntensity = 2.25;
-        next.aoMapIntensity = next.aoMap ? 0.58 : 1;
+        next.roughness = 0.28;
+        next.envMapIntensity = 3.85;
+        next.aoMapIntensity = next.aoMap ? 0.78 : 1;
         next.normalMap = this.satinNormalTexture;
         next.roughnessMap = this.satinRoughnessTexture;
-        if (next.normalScale) next.normalScale.set(0.007, 0.007);
+        if (next.normalScale) next.normalScale.set(0.003, 0.003);
         next.emissive?.set(0x000000);
         if ("emissiveIntensity" in next) next.emissiveIntensity = 0;
-        if ("clearcoat" in next) next.clearcoat = 0.72;
-        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.27;
+        if ("clearcoat" in next) next.clearcoat = 1.0;
+        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.18;
         if ("ior" in next) next.ior = 1.46;
-        if ("specularIntensity" in next) next.specularIntensity = 0.74;
-        next.specularColor?.set(0xe7eef7);
+        if ("specularIntensity" in next) next.specularIntensity = 1.0;
+        next.specularColor?.set(0xf8fbff);
       };
 
       next.envMapIntensity = name.includes("screen") ? 1.35 : 1.2;
@@ -735,13 +846,15 @@ class PixelFoldShowtime extends HTMLElement {
       } else if (name.includes("lens_top") || name.includes("lens_bottom")) {
         ensurePhysical();
         clearTextureMaps();
-        next.color?.set(0x050607);
+        next.color?.set(0x010203);
         next.metalness = 0;
-        next.roughness = 0.2;
-        if ("clearcoat" in next) next.clearcoat = 0.62;
-        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.08;
-        if ("specularIntensity" in next) next.specularIntensity = 0.9;
-        next.envMapIntensity = 1.25;
+        next.roughness = 0.08;
+        if ("clearcoat" in next) next.clearcoat = 1.0;
+        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.035;
+        if ("ior" in next) next.ior = 1.62;
+        if ("specularIntensity" in next) next.specularIntensity = 1.0;
+        next.specularColor?.set(0xffffff);
+        next.envMapIntensity = 4.15;
       } else if (
         name.includes("flash") ||
         materialName.includes("flash_white_clean") ||
@@ -770,15 +883,17 @@ class PixelFoldShowtime extends HTMLElement {
       ) {
         ensurePhysical();
         clearTextureMaps();
-        next.color?.set(0x11141b);
+        next.color?.set(0x101722);
         next.metalness = 0;
-        next.roughness = 0.18;
-        next.aoMapIntensity = next.aoMap ? 0.58 : 1;
+        next.roughness = 0.085;
+        next.aoMapIntensity = next.aoMap ? 0.7 : 1;
         next.emissive?.set(0x020308);
-        if ("emissiveIntensity" in next) next.emissiveIntensity = 0.05;
-        if ("clearcoat" in next) next.clearcoat = 0.55;
-        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.07;
-        next.envMapIntensity = 1.72;
+        if ("emissiveIntensity" in next) next.emissiveIntensity = 0.035;
+        if ("clearcoat" in next) next.clearcoat = 1.0;
+        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.035;
+        if ("ior" in next) next.ior = 1.58;
+        if ("specularIntensity" in next) next.specularIntensity = 1.0;
+        next.envMapIntensity = 3.25;
       } else if (materialName.includes("screen_bezel_black") || name.includes("bezel")) {
         ensurePhysical();
         clearTextureMaps();
@@ -809,25 +924,25 @@ class PixelFoldShowtime extends HTMLElement {
       } else if (this.isSpineMeshName(name) || name.includes("hinge") || materialName.includes("hinge_aluminum")) {
         ensurePhysical();
         clearTextureMaps();
-        next.color?.set(0xe2e8ee);
+        next.color?.set(0xf0f4f8);
         next.metalness = 0.96;
-        next.roughness = 0.11;
-        next.aoMapIntensity = next.aoMap ? 0.42 : 1;
-        if ("clearcoat" in next) next.clearcoat = 0.12;
-        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.12;
-        if ("specularIntensity" in next) next.specularIntensity = 0.96;
-        next.envMapIntensity = 4.35;
+        next.roughness = 0.075;
+        next.aoMapIntensity = next.aoMap ? 0.62 : 1;
+        if ("clearcoat" in next) next.clearcoat = 0.22;
+        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.07;
+        if ("specularIntensity" in next) next.specularIntensity = 1.0;
+        next.envMapIntensity = 6.1;
       } else if (materialName.includes("frame_aluminum")) {
         ensurePhysical();
         clearTextureMaps();
-        next.color?.set(0xe8edf2);
+        next.color?.set(0xf3f6f9);
         next.metalness = 0.98;
-        next.roughness = 0.1;
-        next.aoMapIntensity = next.aoMap ? 0.38 : 1;
-        if ("clearcoat" in next) next.clearcoat = 0.08;
-        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.11;
-        if ("specularIntensity" in next) next.specularIntensity = 0.96;
-        next.envMapIntensity = 4.6;
+        next.roughness = 0.065;
+        next.aoMapIntensity = next.aoMap ? 0.58 : 1;
+        if ("clearcoat" in next) next.clearcoat = 0.18;
+        if ("clearcoatRoughness" in next) next.clearcoatRoughness = 0.075;
+        if ("specularIntensity" in next) next.specularIntensity = 1.0;
+        next.envMapIntensity = 6.4;
       } else if (name.includes("g_logo") || materialName.includes("g_logo")) {
         ensurePhysical();
         clearTextureMaps();
@@ -839,6 +954,7 @@ class PixelFoldShowtime extends HTMLElement {
         next.envMapIntensity = 1.05;
       }
 
+      if ("flatShading" in next) next.flatShading = false;
       next.needsUpdate = true;
       this.meshMaterials.push(next);
       return next;
@@ -852,6 +968,15 @@ class PixelFoldShowtime extends HTMLElement {
   isInnerOnlyMesh(name) {
     const lower = name.toLowerCase();
     return lower.includes("inner_front_camera") || lower.includes("screen_inner_") || lower.includes("inner_bezel_screen_inner");
+  }
+
+  isDisplayGlassMesh(name) {
+    const lower = name.toLowerCase();
+    return (
+      lower.includes("cover_screen") ||
+      lower.includes("screen_inner_left_flat") ||
+      lower.includes("screen_inner_right_flat")
+    );
   }
 
   isScreenZoomCoreMesh(name) {
@@ -991,8 +1116,8 @@ class PixelFoldShowtime extends HTMLElement {
         const right = values[y * size + ((x + 1) % size)];
         const up = values[((y - 1 + size) % size) * size + x];
         const down = values[((y + 1) % size) * size + x];
-        const dx = (left - right) * 8;
-        const dy = (up - down) * 8;
+        const dx = (left - right) * 4.5;
+        const dy = (up - down) * 4.5;
         const nz = 1;
         const invLen = 1 / Math.hypot(dx, dy, nz);
         const o = i * 4;
@@ -1022,9 +1147,9 @@ class PixelFoldShowtime extends HTMLElement {
     const rng = this.seededRandom(997);
     for (let y = 0; y < size; y += 1) {
       for (let x = 0; x < size; x += 1) {
-        const verticalSweep = 0.94 + Math.sin((x / size) * Math.PI * 2) * 0.035;
-        const fine = (rng() - 0.5) * 0.03;
-        const value = Math.round(clamp(verticalSweep + fine, 0.86, 1) * 255);
+        const verticalSweep = 0.88 + Math.sin((x / size) * Math.PI * 2) * 0.05;
+        const fine = (rng() - 0.5) * 0.025;
+        const value = Math.round(clamp(verticalSweep + fine, 0.78, 0.96) * 255);
         const o = (y * size + x) * 4;
         image.data[o] = value;
         image.data[o + 1] = value;
@@ -1038,6 +1163,45 @@ class PixelFoldShowtime extends HTMLElement {
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(6, 10);
     texture.colorSpace = THREE.NoColorSpace;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  createScreenSheenTexture() {
+    const width = 256;
+    const height = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+
+    let gradient = ctx.createLinearGradient(0, height * 0.18, width, height * 0.82);
+    gradient.addColorStop(0, "rgba(255,255,255,0)");
+    gradient.addColorStop(0.42, "rgba(255,255,255,0.62)");
+    gradient.addColorStop(0.5, "rgba(255,255,255,0.16)");
+    gradient.addColorStop(0.68, "rgba(255,255,255,0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(width * -0.16, height * 0.18);
+    ctx.lineTo(width * 0.42, height * 0.04);
+    ctx.lineTo(width * 1.16, height * 0.72);
+    ctx.lineTo(width * 0.55, height * 0.95);
+    ctx.closePath();
+    ctx.fill();
+
+    gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, "rgba(255,255,255,0.18)");
+    gradient.addColorStop(0.22, "rgba(255,255,255,0)");
+    gradient.addColorStop(0.82, "rgba(255,255,255,0)");
+    gradient.addColorStop(1, "rgba(255,255,255,0.09)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.needsUpdate = true;
     return texture;
   }
@@ -1092,6 +1256,9 @@ class PixelFoldShowtime extends HTMLElement {
     const screenFace = this.exitMode === "screen-zoom" ? smoother(0.56, 0.76, p) : 0;
     const screenZoom = this.exitMode === "screen-zoom" ? smoother(0.74, 1.0, p) : 0;
     const fogVanish = this.exitMode === "screen-zoom" ? 0 : vanish;
+    const openScreenPresentation = this.exitMode === "screen-zoom"
+      ? screenFace
+      : smoother(0.39, 0.51, p) * (1 - smoother(0.56, 0.70, p));
 
     const closed = this.exitMode === "screen-zoom"
       ? mix(0.96, 0, unfold)
@@ -1109,11 +1276,11 @@ class PixelFoldShowtime extends HTMLElement {
 
     const spinAmount = this.exitMode === "screen-zoom" ? 0 : spin;
     this.showGroup.rotation.x = mix(0.08, -0.04, poseSettle) + this.pointer.y * 0.035 * (1 - screenZoom) + spinAmount * Math.PI * 0.5;
-    this.showGroup.rotation.y = mix(1.15, 0.12, poseSettle) + this.pointer.x * 0.06 * (1 - screenZoom) + spinAmount * Math.PI * 5.1;
+    const presentationY = mix(1.15, 0.12, poseSettle) + this.pointer.x * 0.06 * (1 - screenZoom) + spinAmount * Math.PI * 5.1;
+    this.showGroup.rotation.y = mix(presentationY, Math.PI + 0.08, openScreenPresentation);
     this.showGroup.rotation.z = mix(-0.08, 0.02, poseSettle) + spinAmount * Math.PI * 0.72;
     if (this.exitMode === "screen-zoom") {
       this.showGroup.rotation.x = mix(this.showGroup.rotation.x, -0.04, screenFace);
-      this.showGroup.rotation.y = mix(this.showGroup.rotation.y, Math.PI + 0.08, screenFace);
       this.showGroup.rotation.z = mix(this.showGroup.rotation.z, 0.02, screenFace);
     }
 
@@ -1127,20 +1294,24 @@ class PixelFoldShowtime extends HTMLElement {
     this.camera.lookAt(0, 0, 0);
 
     this.scene.fog.density = this.exitMode === "screen-zoom" ? mix(0.011, 0.004, screenZoom) : mix(0.011, 0.058, vanish);
-    this.keyLight.intensity = this.exitMode === "screen-zoom" ? mix(1.75, 1.35, screenZoom) : mix(1.75, 0.75, vanish);
-    this.rimLight.intensity = mix(1.12, 1.85, spin);
+    this.keyLight.intensity = this.exitMode === "screen-zoom" ? mix(1.34, 1.1, screenZoom) : mix(1.34, 0.75, vanish);
+    this.rimLight.intensity = mix(1.06, 1.85, spin);
     if (this.cameraBumpStripLight) {
-      this.cameraBumpStripLight.intensity = mix(1.95, 0.95, screenZoom);
+      this.cameraBumpStripLight.intensity = mix(3.2, 1.35, screenZoom);
     }
     if (this.edgeGrazingLight) {
-      this.edgeGrazingLight.intensity = mix(1.85, 0.9, screenZoom);
+      this.edgeGrazingLight.intensity = mix(3.25, 1.15, screenZoom);
     }
     if (this.backSilkLight) {
-      this.backSilkLight.intensity = mix(2.15, 1.02, screenZoom);
+      this.backSilkLight.intensity = mix(3.1, 1.25, screenZoom);
+    }
+    if (this.lensGlintLight) {
+      this.lensGlintLight.intensity = mix(4.4, 1.2, screenZoom);
     }
     const modelOpacity = this.exitMode === "screen-zoom" ? 1 : clamp(1 - vanish * 1.18);
     this.setModelOpacity(modelOpacity);
-    this.applyScreenZoomVisibility(screenFace, modelOpacity);
+    this.applyScreenZoomVisibility(openScreenPresentation, modelOpacity);
+    this.applyInnerPresentationAccents(openScreenPresentation, modelOpacity);
     if (this.phoneGroup) {
       this.phoneGroup.visible = modelOpacity > 0.02;
     }
@@ -1151,7 +1322,8 @@ class PixelFoldShowtime extends HTMLElement {
   applyFold(closed) {
     if (!this.leftPivot || !this.rightPivot) return;
     const angle = closed * (Math.PI / 2);
-    const stackedHalfThickness = smoother(0.18, 0.88, closed) * 0.052;
+    const hingeReveal = smoother(0.1, 0.74, closed);
+    const stackedHalfThickness = hingeReveal * 0.074;
     const hingeCenter = this.hingeCenter || new THREE.Vector3();
     this.leftPivot.position.set(hingeCenter.x, hingeCenter.y + stackedHalfThickness, hingeCenter.z);
     this.rightPivot.position.set(hingeCenter.x, hingeCenter.y - stackedHalfThickness, hingeCenter.z);
@@ -1159,6 +1331,12 @@ class PixelFoldShowtime extends HTMLElement {
     this.rightPivot.rotation.z = -angle;
     this.leftPivot.rotation.y = 0;
     this.rightPivot.rotation.y = 0;
+    if (this.hingeGroup) {
+      this.hingeGroup.visible = hingeReveal > 0.04;
+      this.hingeGroup.position.copy(hingeCenter);
+      this.hingeGroup.position.y += (hingeReveal - 1) * 0.018;
+      this.hingeGroup.scale.setScalar(mix(0.58, 1, hingeReveal));
+    }
   }
 
   applyInnerVisibility(closed) {
@@ -1178,9 +1356,8 @@ class PixelFoldShowtime extends HTMLElement {
 
   applyScreenZoomVisibility(screenFace, modelOpacity) {
     if (!this.screenZoomShellMeshes.length) return;
-    const shellOpacity = this.exitMode === "screen-zoom"
-      ? modelOpacity * (1 - smoother(0.46, 0.82, screenFace))
-      : modelOpacity;
+    const presentation = clamp(screenFace);
+    const shellOpacity = modelOpacity * (1 - smoother(0.14, 0.88, presentation));
 
     this.screenZoomShellMeshes.forEach((mesh) => {
       mesh.visible = shellOpacity > 0.025;
@@ -1188,16 +1365,28 @@ class PixelFoldShowtime extends HTMLElement {
     });
 
     this.screenZoomCoreMeshes.forEach((mesh) => {
-      const keepInnerVisible = this.exitMode === "screen-zoom" && screenFace > 0.04;
+      const keepInnerVisible = presentation > 0.04;
       if (keepInnerVisible || !this.isInnerOnlyMesh(mesh.name)) {
         mesh.visible = true;
       }
       this.setMeshOpacity(mesh, modelOpacity);
     });
 
-    if (this.exitMode !== "screen-zoom") {
+    if (presentation <= 0.04) {
       this.applyInnerVisibility(this.currentClosed ?? 0);
     }
+  }
+
+  applyInnerPresentationAccents(screenFace, modelOpacity) {
+    const presentation = clamp(screenFace);
+    if (this.innerCreaseBridge) {
+      this.innerCreaseBridge.visible = presentation > 0.05 && modelOpacity > 0.02;
+    }
+    this.innerPresentationMaterials.forEach((material) => {
+      material.opacity = modelOpacity * smoother(0.12, 0.86, presentation);
+      material.transparent = true;
+      material.depthWrite = false;
+    });
   }
 
   setMeshOpacity(mesh, opacity) {
